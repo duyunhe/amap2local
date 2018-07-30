@@ -13,7 +13,6 @@ def main():
     for road in road_list:
         x, y = zip(*road)
         plt.plot(x, y)
-
     plt.show()
 
 
@@ -32,12 +31,18 @@ def main3():
     ax = fig1.add_subplot(111)
     way_nodes = load_model()
     for road, item in way_nodes.iteritems():
+        t = road.decode('utf-8')
+        t1 = t[0:2]
+        x = t1.encode('utf-8')
         for ort, path in item.iteritems():
             for seg in path:
                 x, y = zip(*seg)
-                plt.plot(x, y)
+                plt.plot(x, y, alpha=.5, color='k')
+
+    plt.xlim(52186, 110263)
+    plt.ylim(66484, 98279)
     plt.subplots_adjust(left=0.06, right=0.98, bottom=0.05, top=0.96)
-    plt.savefig("road", dpi=200)
+    plt.savefig("road.png", dpi=200)
     plt.show()
 
 

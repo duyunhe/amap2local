@@ -8,7 +8,6 @@ from time import clock
 from geo import bl2xy
 
 way_raw_nodes = {}          # 存放原始数据
-way_nodes = {}              # 存放修改后的数据
 
 
 def put_road(road, coords):
@@ -155,6 +154,14 @@ def raw2model():
 
 
 def load_model():
+    """
+    读取道路数据，存放至way_nodes
+    way_nodes: {road: road_item}
+    road_item: {orientation: path_list}
+    path_list: [[px, py], [px, py]...]
+    :return: way_nodes
+    """
+    way_nodes = {}  # 存放修改后的数据
     fp = open('road_network.txt', 'r')
     while True:
         line = fp.readline().strip('\n')
@@ -186,4 +193,4 @@ def test_model():
     return way_raw_nodes[road]
 
 
-raw2model()
+# raw2model()
