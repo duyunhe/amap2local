@@ -17,6 +17,13 @@ def put_road(road, coords):
         way_raw_nodes[road] = [coords]
 
 
+def put_raw(way_nodes, road, coords):
+    try:
+        way_nodes[road].append(coords)
+    except KeyError:
+        way_nodes[road] = [coords]
+
+
 def build_road_list(next_table, xy_table, head):
     road_list = []
     while True:
@@ -29,6 +36,10 @@ def build_road_list(next_table, xy_table, head):
 
 
 def build_network():
+    """
+    从way_raw_nodes建立路网络
+    :return: 
+    """
     road_network = {}
     for road, crd_list in way_raw_nodes.iteritems():
         if road == 'noname':
@@ -36,12 +47,8 @@ def build_network():
         # if road != '教工路,东北':
         #     continue
         path_list, _ = build_road(road, crd_list)
-        name, ort = road.split(',')
-        try:
-            road_network[name][ort] = path_list
-        except KeyError:
-            road_network[name] = {}
-            road_network[name][ort] = path_list
+        # name, ort = road.split(',')
+        road_network[road] = path_list
     return road_network
 
 
@@ -123,6 +130,38 @@ def read_text(filename):
     fp.close()
 
 
+def read_raw(filename):
+    raw_way_nodes = {}
+    fp = open(filename)
+    while True:
+        line = fp.readline()
+        if line == '':
+            break
+        data_index, road_cnt = line.split(',')
+        # print data_index
+        road_cnt = int(road_cnt)
+        for i in range(road_cnt):
+            line = fp.readline()
+            item = line.strip('\n').split(',', 1)
+            road, ort = item[1], item[2]
+            line = fp.readline()
+            if road == 'noname':
+                continue
+            coords = line.strip('\n').split(';')
+            cor_list = []
+            for coord in coords:
+                x, y = map(float, coord.split(','))
+                cor_list.append([x, y])
+            if i == 0:
+                cor_list = cor_list[1:]
+            elif i == road_cnt - 1:
+                cor_list = cor_list[:-1]
+            if len(cor_list) >= 2:
+                put_raw(raw_way_nodes, road, cor_list)
+    fp.close()
+    return raw_way_nodes
+
+
 def combine_path_str(path):
     str_path = []
     for coord in path:
@@ -134,55 +173,54 @@ def combine_path_str(path):
 
 
 def save_model(road_network):
-    fp = open('road_network.txt', 'w')
+    fp = open('./road/road_network.txt', 'w')
     idx = 0
-    for road, item in road_network.iteritems():
-        fp.write("#road{0},{1},{2}\n".format(idx, road, len(item)))
+    for road, path_list in road_network.iteritems():
+        fp.write("#road{0},{1},{2}\n".format(idx, road, len(path_list)))
         idx += 1
-        for ort, path_list in item.iteritems():
-            fp.write("$orientation,{0},{1}\n".format(ort, len(path_list)))
-            for path in path_list:
-                str_line = combine_path_str(path)
-                fp.write(str_line)
+        for path in path_list:
+            str_line = combine_path_str(path)
+            fp.write(str_line)
+    fp.close()
 
 
 def raw2model():
-    read_text('road.txt')
+    read_text('./road/ns.txt')
     road_list = build_network()
     save_model(road_list)
     return road_list
 
 
+def raw_merge_model():
+    way_nodes = load_model()
+    raw_nodes = read_raw('./road/road2.txt')
+
+
 def load_model():
     """
     读取道路数据，存放至way_nodes
-    way_nodes: {road: road_item}
-    road_item: {orientation: path_list}
+    way_nodes: {road: path_list}
     path_list: [[px, py], [px, py]...]
     :return: way_nodes
     """
     way_nodes = {}  # 存放修改后的数据
-    fp = open('road_network.txt', 'r')
+    fp = open('./road/road_network.txt', 'r')
     while True:
         line = fp.readline().strip('\n')
         if line == '':
             break
-        _, road, road_cnt = line.split(',')
+        _, road, ort, road_cnt = line.split(',')
         road_cnt = int(road_cnt)
-        way_nodes[road] = {}
+        road = road + ',' + ort
+        way_nodes[road] = []
         for i in range(road_cnt):
+            seg = []
             line = fp.readline().strip('\n')
-            _, ort, seg_cnt = line.split(',')
-            seg_cnt = int(seg_cnt)
-            way_nodes[road][ort] = []
-            for j in range(seg_cnt):
-                seg = []
-                line = fp.readline().strip('\n')
-                crds = line.split(';')
-                for crd in crds:
-                    x, y = map(float, crd.split(','))
-                    seg.append([x, y])
-                way_nodes[road][ort].append(seg)
+            crds = line.split(';')
+            for crd in crds:
+                x, y = map(float, crd.split(','))
+                seg.append([x, y])
+            way_nodes[road].append(seg)
     fp.close()
     return way_nodes
 

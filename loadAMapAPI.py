@@ -26,22 +26,38 @@ def process_json(url_json, fp):
             route = body['route']
             path = route['paths'][0]
             steps = path['steps']
-            fp.write("#{0},{1}\n".format(data_idx, len(steps)))
+            line_list = []
             for step in steps:
+                ins = step['instruction']
+                # ins = ins.encode('utf-8')
+                byway = ins.find(u'途经')
+                if byway != -1:
+                    continue
+                byway = ins.find(u'途径')
+                if byway != -1:
+                    continue
+                road = step['road']
+                r = road.encode('utf-8')
+                if r != '南山路':
+                    continue
                 try:
-                    print idx, step['road'], step['orientation']
-                    unc_line = u"{0},{1},{2}\n".format(idx, step['road'], step['orientation'])
+                    print idx, road, step['orientation']
+                    unc_line = u"{0},{1},{2}\n".format(idx, road, step['orientation'])
                     str_line = unc_line.encode('utf-8')
-                    fp.write(str_line)
+                    line_list.append(str_line)
                 except KeyError:
                     print idx, '无名'
-                    fp.write("{0},{1}\n".format(idx, 'noname'))
+                    line_list.append("{0},{1}\n".format(idx, 'noname'))
                 idx += 1
                 polyline = step['polyline']
                 unc_line = u"{0}\n".format(polyline)
                 # print step['polyline']
                 str_line = unc_line.encode('utf-8')
-                fp.write(str_line)
+                line_list.append(str_line)
+
+            fp.write("#{0},{1}\n".format(data_idx, idx))
+            for line in line_list:
+                fp.write(line)
 
         except Exception as e:
             print e.message

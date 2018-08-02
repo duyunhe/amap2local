@@ -30,13 +30,13 @@ def main3():
     fig1 = plt.figure(figsize=(12, 6))
     ax = fig1.add_subplot(111)
     way_nodes = load_model()
-    for road, item in way_nodes.iteritems():
-        t = road.decode('utf-8')
-        t1 = t[0:2]
-        x = t1.encode('utf-8')
-        for ort, path in item.iteritems():
-            for seg in path:
-                x, y = zip(*seg)
+    for road, path in way_nodes.iteritems():
+        # print road
+        for seg in path:
+            x, y = zip(*seg)
+            if road == '南山路,南':
+                plt.plot(x, y, alpha=1, color='r', linewidth=2)
+            else:
                 plt.plot(x, y, alpha=.5, color='k')
 
     plt.xlim(52186, 110263)
