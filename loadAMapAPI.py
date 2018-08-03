@@ -30,16 +30,10 @@ def process_json(url_json, fp):
             for step in steps:
                 ins = step['instruction']
                 # ins = ins.encode('utf-8')
-                byway = ins.find(u'途经')
-                if byway != -1:
-                    continue
-                byway = ins.find(u'途径')
-                if byway != -1:
-                    continue
                 road = step['road']
                 r = road.encode('utf-8')
-                if r != '南山路':
-                    continue
+                # if r != '虎跑路':
+                #     continue
                 try:
                     print idx, road, step['orientation']
                     unc_line = u"{0},{1},{2}\n".format(idx, road, step['orientation'])

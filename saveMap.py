@@ -185,44 +185,10 @@ def save_model(road_network):
 
 
 def raw2model():
-    read_text('./road/ns.txt')
+    read_text('./road/road1.txt')
     road_list = build_network()
     save_model(road_list)
     return road_list
-
-
-def raw_merge_model():
-    way_nodes = load_model()
-    raw_nodes = read_raw('./road/road2.txt')
-
-
-def load_model():
-    """
-    读取道路数据，存放至way_nodes
-    way_nodes: {road: path_list}
-    path_list: [[px, py], [px, py]...]
-    :return: way_nodes
-    """
-    way_nodes = {}  # 存放修改后的数据
-    fp = open('./road/road_network.txt', 'r')
-    while True:
-        line = fp.readline().strip('\n')
-        if line == '':
-            break
-        _, road, ort, road_cnt = line.split(',')
-        road_cnt = int(road_cnt)
-        road = road + ',' + ort
-        way_nodes[road] = []
-        for i in range(road_cnt):
-            seg = []
-            line = fp.readline().strip('\n')
-            crds = line.split(';')
-            for crd in crds:
-                x, y = map(float, crd.split(','))
-                seg.append([x, y])
-            way_nodes[road].append(seg)
-    fp.close()
-    return way_nodes
 
 
 def test_model():
@@ -231,4 +197,4 @@ def test_model():
     return way_raw_nodes[road]
 
 
-# raw2model()
+raw2model()
