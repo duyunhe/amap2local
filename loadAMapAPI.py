@@ -29,9 +29,13 @@ def process_json(url_json, fp):
             line_list = []
             for step in steps:
                 ins = step['instruction']
-                # ins = ins.encode('utf-8')
+                ins = ins.encode('utf-8')
                 road = step['road']
                 r = road.encode('utf-8')
+                if ins.find('途径') != -1 or ins.find('途经') != -1:
+                    road += u',途经'
+                else:
+                    road += u',道路'
                 # if r != '虎跑路':
                 #     continue
                 try:
@@ -59,7 +63,7 @@ def process_json(url_json, fp):
 
 def batch_path_fetch(query_list, fp):
     """
-    :param query_list: 参数list
+    :param query_list: 参数list [depart_lng, depart_lat, dest_lng, dest_lat]
     :param fp: 文件fp
     :return: 
     """

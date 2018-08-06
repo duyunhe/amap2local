@@ -34,14 +34,14 @@ def load_model():
     :return: way_nodes
     """
     way_nodes = {}  # 存放修改后的数据
-    fp = open('./road/road_network.txt', 'r')
+    fp = open('./road/nw.txt', 'r')
     while True:
         line = fp.readline().strip('\n')
         if line == '':
             break
-        _, road, ort, road_cnt = line.split(',')
+        _, road, road_type, ort, road_cnt = line.split(',')
         road_cnt = int(road_cnt)
-        road = road + ',' + ort
+        road = road + ',' + road_type + ',' + ort
         way_nodes[road] = []
         for i in range(road_cnt):
             seg = []
@@ -61,11 +61,13 @@ def main3():
     way_nodes = load_model()
     for road, path in way_nodes.iteritems():
         # print road
-        r = road[0:9]
+        road_name, road_type, road_ort = road.split(',')
         for seg in path:
             x, y = zip(*seg)
-            if r == '虎跑路':
+            if road_name == '虎跑路' and road_type == '道路':
                 plt.plot(x, y, alpha=1, color='r', linewidth=2)
+            elif road_name == '南山路' and road_type == '道路':
+                plt.plot(x, y, alpha=1, color='b', linewidth=2)
             else:
                 plt.plot(x, y, alpha=.5, color='k')
 
@@ -77,4 +79,4 @@ def main3():
 
 
 # main()
-# main3()
+main3()

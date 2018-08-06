@@ -62,8 +62,8 @@ def build_road(road, raw_path_list):
     node_id = {}        # 用经度做hash记录每个点的id
     xy_table = {}       # 记录每个id代表的经纬度
     prev_table = {}
-    # 对确定的点对重建反向链表，即每一点对能确定道路的最小单元
-    # 将路径拆成最小单元，对于prev->id的拓扑关系，记录每个id的prev_id
+    # 对确定的点对重建反向链表，即每一对能确定道路的点作为最小单元segment
+    # 将路径拆成segment，对于prev->id的拓扑关系，记录每个id的prev_id
     # 并使得当prev_id == -1时，该点为合并后新路径的起点
     next_table = {}
     # 使用正向链表重建序列
@@ -172,8 +172,8 @@ def combine_path_str(path):
     return ';'.join(str_path) + '\n'
 
 
-def save_model(road_network):
-    fp = open('./road/road_network.txt', 'w')
+def save_model(road_network, filename):
+    fp = open(filename, 'w')
     idx = 0
     for road, path_list in road_network.iteritems():
         fp.write("#road{0},{1},{2}\n".format(idx, road, len(path_list)))
@@ -187,7 +187,7 @@ def save_model(road_network):
 def raw2model():
     read_text('./road/road1.txt')
     road_list = build_network()
-    save_model(road_list)
+    save_model(road_list, './road/road_network.txt')
     return road_list
 
 
@@ -197,4 +197,4 @@ def test_model():
     return way_raw_nodes[road]
 
 
-raw2model()
+# raw2model()
