@@ -10,7 +10,7 @@ from plotMap import load_model
 def refine():
     way_nodes = load_model()
     for way, path_list in way_nodes:
-        
+
 
 
 refine()
