@@ -59,6 +59,7 @@ def gene_from_gps_data():
         for item in cursor:
             data = map(float, item)
 
+
         conn.close()
     except Exception as e:
         print e.message
