@@ -185,9 +185,9 @@ def save_model(road_network, filename):
 
 
 def raw2model():
-    read_text('./road/road1.txt')
+    read_text('./road/road2.txt')
     road_list = build_network()
-    save_model(road_list, './road/road_network.txt')
+    save_model(road_list, './road/_road_network.txt')
     return road_list
 
 

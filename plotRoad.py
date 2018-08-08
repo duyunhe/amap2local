@@ -13,7 +13,7 @@ reload(sys)
 sys.setdefaultencoding('utf-8')
 
 
-fp = open("./road/ns.txt")
+fp = open("./road/road3.txt")
 while True:
     line = fp.readline().strip('\n')
     if line == '':
@@ -30,5 +30,5 @@ while True:
             seg.append([x, y])
         x, y = zip(*seg)
         plt.plot(x, y)
-        plt.text(x[0], y[0], road)
+        # plt.text(x[0], y[0], road)
 plt.show()

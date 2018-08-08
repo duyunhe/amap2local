@@ -64,7 +64,7 @@ def refine():
                 seg_idx += 1
 
     road_net = build_network()
-    save_model(road_net, './road/nw.txt')
+    save_model(road_net, './road/_road_network.txt')
 
 
 def build_road_list(next_table, xy_table, head):

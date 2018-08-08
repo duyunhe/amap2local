@@ -34,7 +34,7 @@ def load_model():
     :return: way_nodes
     """
     way_nodes = {}  # 存放修改后的数据
-    fp = open('./road/nw.txt', 'r')
+    fp = open('./road/_road_network.txt', 'r')
     while True:
         line = fp.readline().strip('\n')
         if line == '':
@@ -55,7 +55,11 @@ def load_model():
     return way_nodes
 
 
-def main3():
+def main_show():
+    """
+    显示地图
+    :return: 
+    """
     fig1 = plt.figure(figsize=(12, 6))
     ax = fig1.add_subplot(111)
     way_nodes = load_model()
@@ -79,4 +83,4 @@ def main3():
 
 
 # main()
-main3()
+main_show()

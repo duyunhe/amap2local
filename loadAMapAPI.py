@@ -15,12 +15,19 @@ jt_key = "0a54a59bdc431189d9405b3f2937921a"
 
 
 def process_json(url_json, fp):
+    """
+    没啥好说的，就是解析
+    :param url_json: url
+    :param fp: file opened
+    :return: 
+    """
     # fp = open('road.txt', 'w')
     global data_idx
     for data in url_json:
         print "data", data_idx
         data_idx += 1
         idx = 0
+        last_xy = None
         try:
             body = data['body']
             route = body['route']
@@ -32,6 +39,9 @@ def process_json(url_json, fp):
                 ins = ins.encode('utf-8')
                 road = step['road']
                 r = road.encode('utf-8')
+                if ins.find('调头') != -1:
+                    last_xy = None
+                    continue
                 if ins.find('途径') != -1 or ins.find('途经') != -1:
                     road += u',途经'
                 else:
@@ -48,6 +58,18 @@ def process_json(url_json, fp):
                     line_list.append("{0},{1}\n".format(idx, 'noname'))
                 idx += 1
                 polyline = step['polyline']
+                xy_items = polyline.split(';')
+                begin_xy, end_xy = xy_items[0], xy_items[-1]
+                joinline = None
+                if last_xy is not None and last_xy != begin_xy:
+                    polyline = last_xy + ';' + polyline
+                last_xy = end_xy
+                # if joinline is not None:
+                #     unc_line = u"{0}\n".format(joinline)
+                #     # print step['polyline']
+                #     str_line = unc_line.encode('utf-8')
+                #     line_list.append(str_line)
+
                 unc_line = u"{0}\n".format(polyline)
                 # print step['polyline']
                 str_line = unc_line.encode('utf-8')
