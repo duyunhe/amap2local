@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2018/7/25 18:28
 # @Author  : 
-# @简介    : 
+# @简介    : 将原始文件重新组织成路网文件
 # @File    : saveMap.py
 
 from time import clock

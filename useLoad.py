@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2018/7/25 15:10
-# @Author  : 
-# @简介    : 
+# @Author  :
+# @简介    : 使用loadAMapAPI并保存到原始文件
 # @File    : useLoad.py
 
 from loadAMapAPI import batch_path_fetch
@@ -55,11 +55,11 @@ def gene_from_gps_data():
     try:
         gps_data = {}
         # gps_data 用于存放每辆车的轨迹
-        fp = open('./road/road5.txt', 'w')
+        fp = open('./road/road.txt', 'w')
         conn = cx_Oracle.connect('hz', 'hz', '192.168.11.88/orcl')
         sql = "select vehicle_num, px, py from tb_gps_1805 where speed_time > to_date(" \
-              "'2018-05-01 10:00:00', 'yyyy-mm-dd hh24:mi:ss')" \
-              "and speed_time < to_date('2018-05-01 12:00:00', 'yyyy-mm-dd hh24:mi:ss')"
+              "'2018-05-01 9:00:00', 'yyyy-mm-dd hh24:mi:ss')" \
+              "and speed_time < to_date('2018-05-01 10:00:00', 'yyyy-mm-dd hh24:mi:ss')"
         cursor = conn.cursor()
         bt = time.clock()
         cursor.execute(sql)
@@ -67,6 +67,8 @@ def gene_from_gps_data():
         for item in cursor:
             data = map(float, item[1:3])
             lng, lat = data[0:2]
+            if lng > 121 or lng < 119 or lat > 31 or lat < 29:
+                continue
             x, y = bl2xy(lat, lng)
             veh = item[0][-6:]
             try:
