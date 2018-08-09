@@ -58,8 +58,8 @@ def gene_from_gps_data():
         fp = open('./road/road5.txt', 'w')
         conn = cx_Oracle.connect('hz', 'hz', '192.168.11.88/orcl')
         sql = "select vehicle_num, px, py from tb_gps_1805 where speed_time > to_date(" \
-              "'2018-05-01 14:00:00', 'yyyy-mm-dd hh24:mi:ss')" \
-              "and speed_time < to_date('2018-05-01 16:00:00', 'yyyy-mm-dd hh24:mi:ss')"
+              "'2018-05-01 10:00:00', 'yyyy-mm-dd hh24:mi:ss')" \
+              "and speed_time < to_date('2018-05-01 12:00:00', 'yyyy-mm-dd hh24:mi:ss')"
         cursor = conn.cursor()
         bt = time.clock()
         cursor.execute(sql)
@@ -103,7 +103,7 @@ def gene_from_gps_data():
                     idx = 0
                     cnt += 1
                     print "batch" + str(cnt)
-                    if cnt >= 1:
+                    if cnt >= 1000:
                         break
         fp.close()
 
@@ -111,5 +111,5 @@ def gene_from_gps_data():
         print e.message
 
 
-gene()
+gene_from_gps_data()
 

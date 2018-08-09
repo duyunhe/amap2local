@@ -5,7 +5,7 @@
 # @File    : plotMap.py
 
 import matplotlib.pyplot as plt
-from saveMap import raw2model, test_model
+from saveMap import raw2model, test_model, load_model
 
 
 def main():
@@ -26,35 +26,6 @@ def main2():
     plt.show()
 
 
-def load_model():
-    """
-    读取道路数据，存放至way_nodes
-    way_nodes: {road: path_list}
-    path_list: [[px, py], [px, py]...]
-    :return: way_nodes
-    """
-    way_nodes = {}  # 存放修改后的数据
-    fp = open('./road/_road_network.txt', 'r')
-    while True:
-        line = fp.readline().strip('\n')
-        if line == '':
-            break
-        _, road, road_type, ort, road_cnt = line.split(',')
-        road_cnt = int(road_cnt)
-        road = road + ',' + road_type + ',' + ort
-        way_nodes[road] = []
-        for i in range(road_cnt):
-            seg = []
-            line = fp.readline().strip('\n')
-            crds = line.split(';')
-            for crd in crds:
-                x, y = map(float, crd.split(','))
-                seg.append([x, y])
-            way_nodes[road].append(seg)
-    fp.close()
-    return way_nodes
-
-
 def main_show():
     """
     显示地图
@@ -62,7 +33,8 @@ def main_show():
     """
     fig1 = plt.figure(figsize=(12, 6))
     ax = fig1.add_subplot(111)
-    way_nodes = load_model()
+    filename = './road/merge_network.txt'
+    way_nodes = load_model(filename)
     for road, path in way_nodes.iteritems():
         # print road
         road_name, road_type, road_ort = road.split(',')

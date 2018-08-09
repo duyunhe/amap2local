@@ -172,7 +172,42 @@ def combine_path_str(path):
     return ';'.join(str_path) + '\n'
 
 
+def load_model(filename):
+    """
+    读取道路数据，存放至way_nodes
+    way_nodes: {road: path_list}
+    path_list: [[px, py], [px, py]...]
+    :return: way_nodes
+    """
+    way_nodes = {}  # 存放修改后的数据
+    fp = open(filename, 'r')
+    while True:
+        line = fp.readline().strip('\n')
+        if line == '':
+            break
+        _, road, road_type, ort, road_cnt = line.split(',')
+        road_cnt = int(road_cnt)
+        road = road + ',' + road_type + ',' + ort
+        way_nodes[road] = []
+        for i in range(road_cnt):
+            seg = []
+            line = fp.readline().strip('\n')
+            crds = line.split(';')
+            for crd in crds:
+                x, y = map(float, crd.split(','))
+                seg.append([x, y])
+            way_nodes[road].append(seg)
+    fp.close()
+    return way_nodes
+
+
 def save_model(road_network, filename):
+    """
+    上面的反向操作，将路网写到文件
+    :param road_network: 
+    :param filename: 
+    :return: 
+    """
     fp = open(filename, 'w')
     idx = 0
     for road, path_list in road_network.iteritems():
@@ -184,8 +219,32 @@ def save_model(road_network, filename):
     fp.close()
 
 
+def merge_network(old_network, new_network):
+    """
+    将两个路网拼到一起，生成可能重复的路网
+    待refine模块中去重
+    :param old_network: 
+    :param new_network: 
+    :return: 
+    """
+    road_network = {}
+    for road, path_list in old_network.iteritems():
+        for path in path_list:
+            try:
+                road_network[road].append(path)
+            except KeyError:
+                road_network[road] = [path]
+    for road, path_list in new_network.iteritems():
+        for path in path_list:
+            try:
+                road_network[road].append(path)
+            except KeyError:
+                road_network[road] = [path]
+    return road_network
+
+
 def raw2model():
-    read_text('./road/road2.txt')
+    read_text('./road/road5.txt')
     road_list = build_network()
     save_model(road_list, './road/_road_network.txt')
     return road_list
@@ -197,4 +256,13 @@ def test_model():
     return way_raw_nodes[road]
 
 
+def merge():
+    # read_text('./road/road5.txt')
+    new_network = load_model('./road/_road_network.txt')
+    old_network = load_model('./road/merge_network.txt')
+    road_network = merge_network(old_network, new_network)
+    save_model(road_network, './road/merge_network.txt')
+
+
 # raw2model()
+# merge()

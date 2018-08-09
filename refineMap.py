@@ -4,8 +4,7 @@
 # @简介    : segment去重
 # @File    : refineMap.py
 
-from plotMap import load_model
-from saveMap import save_model
+from saveMap import save_model, load_model
 
 seg_map = {}
 seg_idx = 0
@@ -13,15 +12,16 @@ seg_name = []
 way_raw_nodes = {}          # 存放原始数据
 
 
-def refine():
+def refine(filename):
     """
-    首先从network.txt里面提取路网信息
-    打散后重建
+    首先从filename文件里面提取路网信息
+    存放到way_raw_nodes
+    打散后重建，去重
     :return: 
     """
     global seg_idx
     # 先提取道路，再提取连接线
-    way_nodes = load_model()
+    way_nodes = load_model(filename)
     for road, path_list in way_nodes.iteritems():
         road_name, road_type, road_ort = road.split(',')
         if road_type == '途经':
@@ -64,7 +64,7 @@ def refine():
                 seg_idx += 1
 
     road_net = build_network()
-    save_model(road_net, './road/_road_network.txt')
+    save_model(road_net, filename)
 
 
 def build_road_list(next_table, xy_table, head):
@@ -121,7 +121,7 @@ def build_road(road, raw_path_list):
 
 
 def build_network():
-    """
+    """          
     从way_raw_nodes建立路网络
     :return: 
     """
@@ -133,4 +133,4 @@ def build_network():
     return road_network
 
 
-refine()
+refine('./road/merge_network.txt')
