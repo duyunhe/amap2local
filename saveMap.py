@@ -244,7 +244,7 @@ def merge_network(old_network, new_network):
 
 
 def raw2model():
-    read_text('./road/road5.txt')
+    read_text('./road/road.txt')
     road_list = build_network()
     save_model(road_list, './road/_road_network.txt')
     return road_list
