@@ -14,6 +14,31 @@ my_key = "b41e8fba1baa7e243b8f09d8aa4d941c"
 jt_key = "0a54a59bdc431189d9405b3f2937921a"
 
 
+def process_traffic_status(road_name):
+    req = 'https://restapi.amap.com/v3/traffic/status/road?name={1}&city=杭州市' \
+               '&key={0}&extensions=all'.format(jt_key, road_name)
+    try:
+        f = urllib2.urlopen(req)
+        response = f.read()
+        temp = json.loads(response)
+        ti = temp['trafficinfo']
+        roads = ti['roads']
+        x = []
+        for r in roads:
+            try:
+                ort = r['direction']
+                name = r['name']
+                polyline = r['polyline']
+            except KeyError:
+                continue
+            road_data = {'orientation': ort, 'name': name, 'polyline': polyline}
+            x.append(road_data)
+
+    except Exception as e:
+        print e.message
+    return x
+
+
 def process_json(url_json, fp):
     """
     没啥好说的，就是解析
@@ -110,3 +135,17 @@ def batch_path_fetch(query_list, fp):
     except urllib2.URLError, e:
         print e
 
+
+def main():
+    js_data = []
+    road_list = ['文一路', '文二路', '文三路', '古翠路', '学院路', '教工路', '莫干山路']
+    fp = open('./road/road.txt', 'w')
+    for road_name in road_list:
+        js_data.extend(process_traffic_status(road_name))
+    js = json.dumps(js_data, ensure_ascii=False).encode('utf-8')
+    fp.write(js)
+    fp.write('\n')
+    fp.close()
+
+
+main()

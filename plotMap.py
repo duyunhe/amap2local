@@ -5,7 +5,9 @@
 # @File    : plotMap.py
 
 import matplotlib.pyplot as plt
-from saveMap import raw2model, test_model, load_model
+from saveMap import raw2model, test_model
+import json
+from geo import bl2xy
 
 
 def main():
@@ -26,33 +28,42 @@ def main2():
     plt.show()
 
 
-def main_show():
+def load_model(filename):
+    fp = open(filename)
+    line = fp.readline().strip('\n')
+    data = json.loads(line)
+    fp.close()
+    return data
+
+# main()
+# main_show()
+
+
+def main_show2():
     """
     显示地图
     :return: 
     """
     fig1 = plt.figure(figsize=(12, 6))
     ax = fig1.add_subplot(111)
-    filename = './road/merge_network.txt'
-    way_nodes = load_model(filename)
-    for road, path in way_nodes.iteritems():
-        # print road
-        road_name, road_type, road_ort = road.split(',')
-        for seg in path:
-            x, y = zip(*seg)
-            if road_name == '虎跑路' and road_type == '道路':
-                plt.plot(x, y, alpha=1, color='r', linewidth=2)
-            elif road_name == '南山路' and road_type == '道路':
-                plt.plot(x, y, alpha=1, color='b', linewidth=2)
-            else:
-                plt.plot(x, y, alpha=.5, color='k')
+    filename = './road/road.txt'
+    data = load_model(filename)
+    for road in data:
+        pl = road['polyline']
+        xy_items = pl.split(';')
+        x_list, y_list = [], []
+        for xy in xy_items:
+            lng, lat = map(float, xy.split(',')[0:2])
+            x, y = bl2xy(lat, lng)
+            x_list.append(x)
+            y_list.append(y)
+        plt.plot(x_list, y_list, marker='o')
 
-    plt.xlim(52186, 110263)
-    plt.ylim(66484, 98279)
+    plt.xlim(73635, 81161)
+    plt.ylim(82351, 86230)
     plt.subplots_adjust(left=0.06, right=0.98, bottom=0.05, top=0.96)
     plt.savefig("road.png", dpi=200)
     plt.show()
 
 
-# main()
-main_show()
+main_show2()

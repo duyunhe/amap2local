@@ -113,5 +113,4 @@ def gene_from_gps_data():
         print e.message
 
 
-gene_from_gps_data()
 
