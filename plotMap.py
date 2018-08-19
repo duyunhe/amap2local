@@ -46,7 +46,7 @@ def main_show2():
     """
     fig1 = plt.figure(figsize=(12, 6))
     ax = fig1.add_subplot(111)
-    filename = './road/road.txt'
+    filename = './road/split.txt'
     data = load_model(filename)
     for road in data:
         pl = road['polyline']
@@ -57,10 +57,10 @@ def main_show2():
             x, y = bl2xy(lat, lng)
             x_list.append(x)
             y_list.append(y)
-        plt.plot(x_list, y_list, marker='o')
+        plt.plot(x_list, y_list, marker='o', markersize=5)
 
-    plt.xlim(73635, 81161)
-    plt.ylim(82351, 86230)
+    plt.xlim(75550, 78948)
+    plt.ylim(83080, 84958)
     plt.subplots_adjust(left=0.06, right=0.98, bottom=0.05, top=0.96)
     plt.savefig("road.png", dpi=200)
     plt.show()
