@@ -5,7 +5,17 @@
 # @File    : refineMap.py
 
 import json
-from geo import bl2xy, calc_dist
+
+from DBConn import oracle_util
+from geo import bl2xy, xy2bl, calc_dist, point2segment
+
+
+def save_model(filename, road_data):
+    js = json.dumps(road_data, ensure_ascii=False).encode('utf-8')
+    fp = open(filename, 'w')
+    fp.write(js)
+    fp.write('\n')
+    fp.close()
 
 
 def load_model(filename):
@@ -20,10 +30,15 @@ def path2polyline(path):
     return ';'.join(path)
 
 
+def polyline2path(pll):
+    items = pll.split(';')
+    return items
+
+
 def coord2xy(coord):
     lng, lat = map(float, coord.split(',')[0:2])
     px, py = bl2xy(lat, lng)
-    return px, py
+    return [px, py]
 
 
 def process(coord, path_list):
@@ -183,4 +198,129 @@ def build():
     fp.close()
 
 
-build()
+def doglas(path):
+    if len(path) == 2:
+        return [path]
+    max_dist, sel = 0, -1
+    pt0, pt1 = coord2xy(path[0]), coord2xy(path[-1])
+
+    for i, str_pt in enumerate(path):
+        pt = coord2xy(str_pt)
+        dist = point2segment(pt, pt0, pt1)
+        if dist > max_dist:
+            max_dist, sel = dist, i
+    path_list = []
+    if max_dist > 20:
+        path0, path1 = doglas(path[:sel + 1]), doglas(path[sel:])
+        path_list.extend(path0)
+        path_list.extend(path1)
+    else:
+        path_list.append(path)
+    return path_list
+
+
+def refine_road(road):
+    pl = road['polyline']
+    path = polyline2path(pl)
+    sp_path = doglas(path)
+    return sp_path
+
+
+def simplify():
+    road_data = load_model('./road/split.txt')
+    new_data = []
+    for road in road_data:
+        name = road['name']
+        if True:
+            road_paths = refine_road(road)
+            for i, path in enumerate(road_paths):
+                new_road = {'name': name, 'ort': road['ort'] + ',{0}'.format(i),
+                            'polyline': path2polyline(path)}
+                new_data.append(new_road)
+        # new_data.append(road)
+    save_model('./road/simply.txt', new_data)
+
+
+def split_road(road):
+    path = polyline2path(road['polyline'])
+    temp_length = 0
+    last_pt, last_coord = None, None
+    path_list = []
+    new_path = []
+    for coord in path:
+        pt = coord2xy(coord)
+        if last_pt is None:
+            new_path.append(coord)
+            last_pt, last_coord = pt, coord
+            continue
+        dist = calc_dist(last_pt, pt)
+        temp_length += dist
+        if temp_length > 400:   # divide
+            x, y = (last_pt[0] + pt[0]) / 2, (last_pt[1] + pt[1]) / 2
+            lat, lng = xy2bl(x, y)
+            lat, lng = round(lat, 6), round(lng, 6)
+            new_coord = u"{0},{1}".format(lng, lat)
+            new_path.append(new_coord)
+            path_list.append(new_path)
+            new_path = [new_coord, coord]
+            temp_length = dist / 2
+        elif temp_length > 250:
+            new_path.append(coord)
+            path_list.append(new_path)
+            new_path = [coord]
+            temp_length = 0
+        else:
+            new_path.append(coord)
+        last_pt, last_coord = pt, coord
+    if len(new_path) >= 2:
+        if temp_length > 100:
+            path_list.append(new_path)
+        else:
+            try:
+                temp_path = path_list[-1]
+                temp_path.extend(new_path)
+                path_list[-1] = temp_path
+            except IndexError:          # path_list empty
+                path_list.append(new_path)
+    return path_list
+
+
+def split():
+    road_data = load_model('./road/road.txt')
+    new_data = []
+    for road in road_data:
+        name = road['name']
+        if True:
+            split_road(road)
+            road_paths = split_road(road)
+            for i, path in enumerate(road_paths):
+                new_road = {'name': name, 'ort': road['ort'] + ',{0}'.format(i),
+                            'polyline': path2polyline(path)}
+                new_data.append(new_road)
+    save_model('./road/split.txt', new_data)
+
+
+def save_db():
+    road_data = load_model('./road/split.txt')
+    conn = oracle_util.get_connection()
+    cursor = conn.cursor()
+    road_index = 1000001
+    for road in road_data:
+        name, path = road['name'], polyline2path(road['polyline'])
+        sql = "insert into tb_road_state(rid, road_name, road_" \
+              "level, road_desc) values(:1, :2, :3, :4)"
+        tup = (road_index, name, 2, road['ort'])
+        cursor.execute(sql, tup)
+        sql = "insert into tb_road_point(rid, seq, longitude, " \
+              "latitude) values(:1, :2, :3, :4)"
+        tup_list = []
+        for i, pt in enumerate(path):
+            lng, lat = map(float, pt.split(',')[0:2])
+            tup = (road_index, i, lng, lat)
+            tup_list.append(tup)
+        cursor.executemany(sql, tup_list)
+        road_index += 1
+    conn.commit()
+
+
+save_db()
