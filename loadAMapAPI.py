@@ -5,8 +5,8 @@
 # @File    : loadAMapAPI.py
 
 
-import urllib2
 import json
+import urllib2
 
 data_idx = 0
 param_list = []
@@ -29,9 +29,11 @@ def process_traffic_status(road_name):
                 ort = r['direction']
                 name = r['name']
                 polyline = r['polyline']
+                lcode = r['lcodes']
             except KeyError:
                 continue
-            road_data = {'orientation': ort, 'name': name, 'polyline': polyline}
+            road_data = {'orientation': ort, 'name': name, 'polyline': polyline,
+                         'lcodes': lcode}
             x.append(road_data)
 
     except Exception as e:
@@ -138,8 +140,12 @@ def batch_path_fetch(query_list, fp):
 
 def main():
     js_data = []
-    road_list = ['文一路', '文二路', '文三路', '古翠路', '学院路', '教工路', '莫干山路']
-    fp = open('./road/road.txt', 'w')
+    # road_list = ['文一路', '文二路', '文三路', '古翠路', '保俶北路', '天目山路',
+    #              '学院路', '教工路', '莫干山路', '文一西路', '文二西路', '文三西路',
+    #              '古墩路', '丰潭路', '紫金港路', '余杭塘路']
+    road_list = ['文一路', '莫干山路']
+
+    fp = open('./road/raw.txt', 'w')
     for road_name in road_list:
         js_data.extend(process_traffic_status(road_name))
     js = json.dumps(js_data, ensure_ascii=False).encode('utf-8')

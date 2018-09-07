@@ -154,7 +154,6 @@ def point_project(point, segment_point0, segment_point1):
 
 def point2segment(point, segment_point0, segment_point1):
     """
-
     :param point: point to be matched
     :param segment_point0: segment
     :param segment_point1: 
@@ -181,4 +180,90 @@ def draw_raw(traj, ax):
         xlist.append(point.px)
         ylist.append(point.py)
     ax.plot(xlist, ylist, marker='o', linestyle='--', color='k', lw=1)
+
+
+def line2grid(segment_point0, segment_point1):
+    x0, y0 = segment_point0[0:2]
+    x1, y1 = segment_point1[0:2]
+
+    dx, dy = x1 - x0, y1 - y0
+    # 是否用x步进
+    if dx == 0:
+        x_step = False
+    else:
+        k = dy / dx
+        x_step = math.fabs(k) < 1
+    grid = []
+    if x_step:
+        if x0 > x1:
+            x0, y0, x1, y1 = x1, y1, x0, y0
+        k = dy / dx
+        x, y = int(x0), y0
+        while x <= x1:
+            grid.append([x, int(y)])
+            # grid.append([x, int(y) + 1])
+            x, y = x + 1, y + k
+    else:
+        if y0 > y1:
+            x0, y0, x1, y1 = x1, y1, x0, y0
+        k = dx / dy
+        x, y = x0, int(y0)
+        while y <= y1:
+            grid.append([int(x), y])
+            # grid.append([int(x), y + 1])
+            x, y = x + k, y + 1
+    return grid
+
+
+def get_parallel(segment_point0, segment_point1, d):
+    """
+    获取离线段距离为d的两条平行线段
+    :param segment_point0: 线段端点0
+    :param segment_point1: 线段端点1
+    :param d: 距离d
+    :return: segment1, segment2
+    """
+    x0, y0 = segment_point0[0:2]
+    x1, y1 = segment_point1[0:2]
+    vec = np.array([x1 - x0, y1 - y0])
+    y = np.linalg.norm(vec)
+    z = vec / y
+    h0 = np.array([z[1], -z[0]])
+    h1 = np.array([-z[1], z[0]])
+    xh0, yh0 = x0 + h0[0] * d, y0 + h0[1] * d
+    xh1, yh1 = x1 + h0[0] * d, y1 + h0[1] * d
+    segment0 = [[xh0, yh0], [xh1, yh1]]
+    xh0, yh0 = x0 + h1[0] * d, y0 + h1[1] * d
+    xh1, yh1 = x1 + h1[0] * d, y1 + h1[1] * d
+    segment1 = [[xh0, yh0], [xh1, yh1]]
+    return segment0, segment1
+
+
+def get_line_equation(segment_point0, segment_point1):
+    x0, y0 = segment_point0[0:2]
+    x1, y1 = segment_point1[0:2]
+    a, b, c = y1 - y0, x0 - x1, x1 * y0 - y1 * x0
+    d = math.sqrt(a * a + b * b)
+    a, b, c = a / d, b / d, c / d
+    return a, b, c
+
+
+def get_segment_cross_point(segment0, segment1):
+    """
+    :param segment0: [point0, point1]
+    :param segment1: 
+    :return: 
+    """
+    sp0, sp1 = segment0[0:2]
+    a0, b0, c0 = get_line_equation(sp0, sp1)
+    sp0, sp1 = segment1[0:2]
+    a1, b1, c1 = get_line_equation(sp0, sp1)
+
+    d = a0 * b1 - a1 * b0
+    if d == 0:          # 平行
+        return d, None, None
+    else:
+        px = (b0 * c1 - b1 * c0) / d
+        py = (c0 * a1 - c1 * a0) / d
+        return d, px, py
 
