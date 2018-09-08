@@ -6,11 +6,10 @@
 
 import json
 import math
-
 import numpy as np
-
-from DBConn import oracle_util
-from geo import bl2xy, xy2bl, calc_dist, point2segment, line2grid, get_segment_cross_point
+# from DBConn import oracle_util
+from geo import bl2xy, xy2bl, calc_dist, point2segment, line2grid,\
+    get_segment_cross_point, is_segment_cross, get_parallel
 
 
 def save_model(filename, road_data):
@@ -39,7 +38,7 @@ def polyline2path(pll):
 
 
 def xylist2polyline(xy_list):
-    str_list = ["{0},{1}".format(xy[0], xy[1]) for xy in xy_list]
+    str_list = ["{0:.2f},{1:.2f}".format(xy[0], xy[1]) for xy in xy_list]
     return ';'.join(str_list)
 
 
@@ -590,21 +589,86 @@ def get_cross(path0, path1):
     seg_list0, seg_list1 = path2seg(path0), path2seg(path1)
     for s0 in seg_list0:
         for s1 in seg_list1:
-            _, px, py = get_segment_cross_point(s0, s1)
-            x0, y0, x1, y1 = s0[0][0], s0[0][1], s0[1][0], s1[1][1]
-            if x0 <= px <= x1 and y0 <= py <= y1 or x1 <= px <= x0 and y1 <= py <= y0:
+            if is_segment_cross(s0, s1):
+                _, px, py = get_segment_cross_point(s0, s1)
                 cross_point = [px, py]
+                break
     return cross_point
+
+
+def get_cross_divide(path0, path1):
+    """
+    :param path0: list of points [pt0, pt1, ... ptn]
+    :param path1:
+    :return: list of points which add cross point
+    """
+    seg_list0, seg_list1 = path2seg(path0), path2seg(path1)
+    sel_i, sel_j, cross_point = -1, -1, None
+    for i, s0 in enumerate(seg_list0):
+        for j, s1 in enumerate(seg_list1):
+            if is_segment_cross(s0, s1):
+                _, px, py = get_segment_cross_point(s0, s1)
+                cross_point = [px, py]
+                sel_i, sel_j = i, j
+    new_path0, new_path1 = [], []
+
+
+def seg2path(seg_list):
+    """
+    用于不连续线段补全交点
+    :param seg_list: 线段的list
+    :return:
+    """
+    xylist = [seg_list[0][0]]
+    last_seg = None
+    for seg in seg_list:
+        if last_seg is not None:
+            _, px, py = get_segment_cross_point(last_seg, seg)
+            xylist.append([px, py])
+        last_seg = seg
+    xylist.append(seg_list[-1][1])
+    return xylist
 
 
 def par():
     road_data = load_model('./road/center.txt')
+    pt = None
     for i, road0 in enumerate(road_data):
         for j, road1 in enumerate(road_data[i + 1:]):
             path0, path1 = polyline2xylist(road0['polyline']),\
                            polyline2xylist(road1['polyline'])
             pt = get_cross(path0, path1)
-            if pt is not None:
-                print pt
-    return pt
 
+    par_road = []
+    for road in road_data:
+        name, path = road['name'], polyline2xylist(road['polyline'])
+        last_pt = None
+        par_seg0, par_seg1 = [], []
+        for pt in path:
+            if last_pt is not None:
+                seg0, seg1 = get_parallel(last_pt, pt, 20)
+                par_seg0.append(seg0)
+                par_seg1.append(seg1)
+            last_pt = pt
+        path0, path1 = seg2path(par_seg0), seg2path(par_seg1)
+        road_info = {'name': name, 'polyline': xylist2polyline(path0)}
+        par_road.append(road_info)
+        road_info = {'name': name, 'polyline': xylist2polyline(path1)}
+        par_road.append(road_info)
+
+    for i, road0 in enumerate(par_road):
+        for j, road1 in enumerate(par_road[i + 1:]):
+            path0, path1 = polyline2xylist(road0['polyline']), \
+                           polyline2xylist(road1['polyline'])
+            name0, name1 = road0['name'], road1['name']
+            if name0 == name1:
+                continue
+            cross_pt = get_cross(path0, path1)
+            if cross_pt is not None:
+                pass
+
+    save_model('./road/parallel.txt', par_road)
+    return None
+
+# center()
+par()

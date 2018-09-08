@@ -109,20 +109,6 @@ def main_show():
         # plt.plot(x_list, y_list, marker='o', markersize=5)
         plt.plot(x_list, y_list)
 
-    filename = './road/merge.txt'
-    data = load_model(filename)
-    for road in data:
-        pl = road['polyline']
-        xy_items = pl.split(';')
-        x_list, y_list = [], []
-        for xy in xy_items:
-            lng, lat = map(float, xy.split(',')[0:2])
-            x, y = bl2xy(lat, lng)
-            x_list.append(x)
-            y_list.append(y)
-        # plt.plot(x_list, y_list, marker='o', markersize=5)
-        plt.plot(x_list, y_list)
-
     plt.xlim(75550, 78948)
     plt.ylim(83080, 84958)
     plt.subplots_adjust(left=0.06, right=0.98, bottom=0.05, top=0.96)
@@ -149,25 +135,26 @@ def main_show1():
             x_list.append(x)
             y_list.append(y)
         # plt.plot(x_list, y_list, marker='o', markersize=5)
-        plt.plot(x_list, y_list, color='r', linestyle='--')
+        plt.plot(x_list, y_list, color='r', marker='s', linestyle='--')
 
-    filename = './road/merge.txt'
+    filename = './road/parallel.txt'
     data = load_model(filename)
     for road in data:
         pl = road['polyline']
         xy_items = pl.split(';')
         x_list, y_list = [], []
         for xy in xy_items:
-            lng, lat = map(float, xy.split(',')[0:2])
-            x, y = bl2xy(lat, lng)
+            x, y = map(float, xy.split(',')[0:2])
+            # x, y = bl2xy(lat, lng)
             x_list.append(x)
             y_list.append(y)
         # plt.plot(x_list, y_list, marker='o', markersize=5)
         plt.plot(x_list, y_list, color='k')
 
     pt = refineMap.par()
-    x_list, y_list = [pt[0]], [pt[1]]
-    plt.plot(x_list, y_list, marker='o', markersize=5)
+    if pt is not None:
+        x_list, y_list = [pt[0]], [pt[1]]
+        plt.plot(x_list, y_list, marker='o', markersize=5)
 
     plt.xlim(75550, 78948)
     plt.ylim(83080, 84958)

@@ -250,9 +250,10 @@ def get_line_equation(segment_point0, segment_point1):
 
 def get_segment_cross_point(segment0, segment1):
     """
+    获得两线段交点（在延长线上的交点）
     :param segment0: [point0, point1]
     :param segment1: 
-    :return: 
+    :return:
     """
     sp0, sp1 = segment0[0:2]
     a0, b0, c0 = get_line_equation(sp0, sp1)
@@ -266,4 +267,23 @@ def get_segment_cross_point(segment0, segment1):
         px = (b0 * c1 - b1 * c0) / d
         py = (c0 * a1 - c1 * a0) / d
         return d, px, py
+
+
+def is_segment_cross(segment0, segment1):
+    """
+    计算两线段是否相交
+    :param segment0: [pt1, pt2....ptn]
+    here pt is [px, py]
+    :param segment1:
+    :return: bool
+    """
+    ZERO = 1e-10
+    a, b = segment0[0:2]
+    c, d = segment1[0:2]
+    ac = np.array([c[0] - a[0], c[1] - a[1]])
+    ad = np.array([d[0] - a[0], d[1] - a[1]])
+    bc = np.array([c[0] - b[0], c[1] - b[1]])
+    bd = np.array([d[0] - b[0], d[1] - b[1]])
+    ca, cb, da, db = -ac, -bc, -ad, -bd
+    return np.cross(ac, ad) * np.cross(bc, bd) <= ZERO and np.cross(ca, cb) * np.cross(da, db) <= ZERO
 
