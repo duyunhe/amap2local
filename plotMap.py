@@ -8,8 +8,7 @@ import json
 
 import matplotlib.pyplot as plt
 
-import refineMap
-from geo import bl2xy, get_segment_cross_point
+from geo import bl2xy, get_cross_point
 from saveMap import raw2model, test_model
 
 
@@ -19,6 +18,20 @@ def main():
         x, y = zip(*road)
         plt.plot(x, y)
     plt.show()
+
+
+def plot_path(path, c):
+    if path == u'':
+        return
+    xy_items = path.split(';')
+    x_list, y_list = [], []
+    for xy in xy_items:
+        x, y = map(float, xy.split(',')[0:2])
+        # x, y = bl2xy(lat, lng)
+        x_list.append(x)
+        y_list.append(y)
+    plt.plot(x_list, y_list, linestyle='', color=c, marker='o', markersize=5)
+    # plt.plot(x_list, y_list, color='k')
 
 
 def main2():
@@ -49,7 +62,7 @@ def draw_seg(seg_list):
         x_list, y_list = zip(*seg)
         plt.plot(x_list, y_list, marker='None', color='k', linestyle='-')
         if last_seg is not None:
-            d, px, py = get_segment_cross_point(seg, last_seg)
+            d, px, py = get_cross_point(seg, last_seg)
             cross_point.append([px, py])
             # plt.text(x_list[0] + 5, y_list[0] + 5, "{0:2f}".format(d))
         last_seg = seg
@@ -123,38 +136,32 @@ def main_show1():
     """
     fig1 = plt.figure(figsize=(12, 6))
     ax = fig1.add_subplot(111)
-    filename = './road/center.txt'
+
+    filename = './road/road.txt'
     data = load_model(filename)
     for road in data:
         pl = road['polyline']
+        # rid = road['rid']
         xy_items = pl.split(';')
         x_list, y_list = [], []
-        for xy in xy_items:
+        for i, xy in enumerate(xy_items):
             x, y = map(float, xy.split(',')[0:2])
             # x, y = bl2xy(lat, lng)
             x_list.append(x)
             y_list.append(y)
-        # plt.plot(x_list, y_list, marker='o', markersize=5)
-        plt.plot(x_list, y_list, color='r', marker='s', linestyle='--')
+            # plt.text(x + 5, y + 5, str(i))
+        # plt.plot(x_list, y_list, color='darkblue')
+        plt.plot(x_list, y_list, marker='', markersize=2, color='darkblue', linewidth=1)
+        # plt.text(x_list[0], y_list[0], str(rid))
 
-    filename = './road/parallel.txt'
-    data = load_model(filename)
-    for road in data:
-        pl = road['polyline']
-        xy_items = pl.split(';')
-        x_list, y_list = [], []
-        for xy in xy_items:
-            x, y = map(float, xy.split(',')[0:2])
-            # x, y = bl2xy(lat, lng)
-            x_list.append(x)
-            y_list.append(y)
-        # plt.plot(x_list, y_list, marker='o', markersize=5)
-        plt.plot(x_list, y_list, color='k')
-
-    pt = refineMap.par()
-    if pt is not None:
-        x_list, y_list = [pt[0]], [pt[1]]
-        plt.plot(x_list, y_list, marker='o', markersize=5)
+        # if rid == 1:
+        #     try:
+        #         entrance = road['entrance']
+        #         plot_path(entrance, 'r')
+        #         ext = road['exit']
+        #         plot_path(ext, 'g')
+        #     except KeyError:
+        #         pass
 
     plt.xlim(75550, 78948)
     plt.ylim(83080, 84958)

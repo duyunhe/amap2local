@@ -6,10 +6,14 @@
 
 import json
 import math
+
 import numpy as np
-# from DBConn import oracle_util
-from geo import bl2xy, xy2bl, calc_dist, point2segment, line2grid,\
-    get_segment_cross_point, is_segment_cross, get_parallel
+
+from DBConn import oracle_util
+from geo import bl2xy, xy2bl, calc_dist, point2segment, line2grid, \
+    get_cross_point, is_segment_cross, get_parallel, point2segment2, calc_include_angle2, \
+    cut_x, cut_y
+from map_struct import Road, Point, Segment
 
 
 def save_model(filename, road_data):
@@ -21,10 +25,13 @@ def save_model(filename, road_data):
 
 
 def load_model(filename):
-    fp = open(filename)
-    line = fp.readline().strip('\n')
-    data = json.loads(line)
-    fp.close()
+    try:
+        fp = open(filename)
+        line = fp.readline().strip('\n')
+        data = json.loads(line)
+        fp.close()
+    except ValueError:
+        data = []
     return data
 
 
@@ -42,6 +49,11 @@ def xylist2polyline(xy_list):
     return ';'.join(str_list)
 
 
+def point_list2polyline(point_list):
+    str_list = ["{0:.2f},{1:.2f}".format(point.px, point.py) for point in point_list]
+    return ';'.join(str_list)
+
+
 def polyline2xylist(polyline):
     """
     :param polyline: string
@@ -53,6 +65,20 @@ def polyline2xylist(polyline):
         px, py = map(float, coord.split(',')[0:2])
         xylist.append([px, py])
     return xylist
+
+
+def polyline2pt_list(polyline):
+    """
+    :param polyline: string
+    :return: [Point0, Point1...Pointn]
+    """
+    coords = polyline.split(';')
+    point_list = []
+    for coord in coords:
+        px, py = map(float, coord.split(',')[0:2])
+        pt = Point(px, py)
+        point_list.append(pt)
+    return point_list
 
 
 def coord2xy(coord):
@@ -440,10 +466,15 @@ def center():
         except KeyError:
             road_dict[name] = [road_info]
 
-    road_center_list = []
+    temp_list = load_model('./road/center.txt')
+    exist_road = []
+    for road_info in temp_list:
+        name = road_info['name']
+        exist_road.append(name)
+    road_center_list = temp_list
     for name, road_list in road_dict.iteritems():
-        # if name == u'文一路':
-        #     continue
+        if name in exist_road:
+            continue
         xy_list = grid_center_line(name, road_list)
         polyline = xylist2polyline(xy_list)
         center_line = {'name': name, 'polyline': polyline}
@@ -453,6 +484,17 @@ def center():
 
 def grid_center_line(road_name, road_list):
     print road_name
+    if len(road_list) == 1:
+        # 单行线
+        test_road = road_list[0]
+        pll = test_road['polyline']
+        pt_list = []
+        coord_list = polyline2path(pll)
+        for coord in coord_list:
+            px, py = coord2xy(coord)
+            pt_list.append([px, py])
+        pt_list = dog_last(pt_list)
+        return pt_list
     road_xy_data = []
 
     sel_y = {}          # 用于每个y值需要扫描的栅格
@@ -579,38 +621,25 @@ def path2seg(path):
     return seg_list
 
 
-def get_cross(path0, path1):
+def get_cross(road0, road1):
     """
-    :param path0: 第一条道路的路径list
-    :param path1: 第二条道路的路径list
+    :param road0: Road
+    :param road1: 
     :return: cross point
     """
     cross_point = None
-    seg_list0, seg_list1 = path2seg(path0), path2seg(path1)
-    for s0 in seg_list0:
-        for s1 in seg_list1:
-            if is_segment_cross(s0, s1):
-                _, px, py = get_segment_cross_point(s0, s1)
-                cross_point = [px, py]
-                break
-    return cross_point
-
-
-def get_cross_divide(path0, path1):
-    """
-    :param path0: list of points [pt0, pt1, ... ptn]
-    :param path1:
-    :return: list of points which add cross point
-    """
-    seg_list0, seg_list1 = path2seg(path0), path2seg(path1)
-    sel_i, sel_j, cross_point = -1, -1, None
+    seg_list0, seg_list1 = road0.seg_list, road1.seg_list
     for i, s0 in enumerate(seg_list0):
         for j, s1 in enumerate(seg_list1):
             if is_segment_cross(s0, s1):
-                _, px, py = get_segment_cross_point(s0, s1)
-                cross_point = [px, py]
-                sel_i, sel_j = i, j
-    new_path0, new_path1 = [], []
+                d, px, py = get_cross_point(s0, s1)
+                cross_point = Point(px, py)
+                # d <0代表进路口 > 0代表出路口
+                if d < 0:
+                    s0.add_entrance(cross_point)
+                else:
+                    s0.add_exit(cross_point)
+    return cross_point
 
 
 def seg2path(seg_list):
@@ -623,52 +652,313 @@ def seg2path(seg_list):
     last_seg = None
     for seg in seg_list:
         if last_seg is not None:
-            _, px, py = get_segment_cross_point(last_seg, seg)
+            _, px, py = get_cross_point(last_seg, seg)
             xylist.append([px, py])
         last_seg = seg
     xylist.append(seg_list[-1][1])
     return xylist
 
 
-def par():
+def cut():
     road_data = load_model('./road/center.txt')
-    pt = None
-    for i, road0 in enumerate(road_data):
-        for j, road1 in enumerate(road_data[i + 1:]):
-            path0, path1 = polyline2xylist(road0['polyline']),\
-                           polyline2xylist(road1['polyline'])
-            pt = get_cross(path0, path1)
-
-    par_road = []
+    temp = []
     for road in road_data:
-        name, path = road['name'], polyline2xylist(road['polyline'])
+        name, point_list = road['name'], polyline2pt_list(road['polyline'])
+        new_point_list = cut_y(point_list, 86000)
+        new_point_list = cut_x(new_point_list, 72500)
+        road_info = {'name': name, 'polyline': point_list2polyline(new_point_list)}
+        temp.append(road_info)
+    save_model('./road/cut.txt', temp)
+
+
+def par():
+    road_data = load_model('./road/cut.txt')
+    par_road = []
+    road_index = 0
+    for road in road_data:
+        name, point_list = road['name'], polyline2pt_list(road['polyline'])
         last_pt = None
-        par_seg0, par_seg1 = [], []
-        for pt in path:
+        road0, road1 = Road(name, 0, road_index), Road(name, 0, road_index + 1)
+        road_index += 2
+        seg_list0, seg_list1 = [], []
+        for pt in point_list:
             if last_pt is not None:
-                seg0, seg1 = get_parallel(last_pt, pt, 20)
-                par_seg0.append(seg0)
-                par_seg1.append(seg1)
+                # 获取两条平移线段
+                seg0, seg1 = get_parallel(last_pt, pt, 10)
+                seg_list0.append(seg0)
+                seg1.set_invert()
+                seg_list1.append(seg1)
             last_pt = pt
-        path0, path1 = seg2path(par_seg0), seg2path(par_seg1)
-        road_info = {'name': name, 'polyline': xylist2polyline(path0)}
-        par_road.append(road_info)
-        road_info = {'name': name, 'polyline': xylist2polyline(path1)}
-        par_road.append(road_info)
+        # 计算线段之间的交点
+        last_seg = None
+        for seg in seg_list0:
+            if last_seg is None:
+                road0.add_point(seg.begin_point)
+            else:
+                _, px, py = get_cross_point(last_seg, seg)
+                cp = Point(px, py)
+                road0.add_point(cp)
+            last_seg = seg
+        road0.add_point(last_seg.end_point)
+        last_seg = None
+        for seg in reversed(seg_list1):
+            if last_seg is None:
+                road1.add_point(seg.begin_point)
+            else:
+                _, px, py = get_cross_point(last_seg, seg)
+                cp = Point(px, py)
+                road1.add_point(cp)
+            last_seg = seg
+        road1.add_point(last_seg.end_point)
+        # 并生成线段
+        road0.gene_segment()
+        road1.gene_segment()
+
+        par_road.append(road0)
+        par_road.append(road1)
 
     for i, road0 in enumerate(par_road):
-        for j, road1 in enumerate(par_road[i + 1:]):
-            path0, path1 = polyline2xylist(road0['polyline']), \
-                           polyline2xylist(road1['polyline'])
-            name0, name1 = road0['name'], road1['name']
+        for j, road1 in enumerate(par_road):
+            name0, name1 = road0.name, road1.name
             if name0 == name1:
                 continue
-            cross_pt = get_cross(path0, path1)
-            if cross_pt is not None:
-                pass
+            get_cross(road0, road1)
 
-    save_model('./road/parallel.txt', par_road)
+    road_list = []
+    # Road list
+    for road in par_road:
+        # path_list = road.get_path_without_crossing()
+        # for path in path_list:
+        #     road_info = {'name': road.name, 'path': point_list2polyline(path),
+        #                  'rid': road.rid}
+        #     road_list.append(road_info)
+        tlist, elist = road.get_entrance(), road.get_exit()
+        cross_list = []
+        cross_list.extend(tlist)
+        cross_list.extend(elist)
+        road_info = {'name': road.name, 'path': point_list2polyline(road.get_path()),
+                     'entrance': point_list2polyline(tlist), 'rid': road.rid,
+                     'exit': point_list2polyline(elist), 'cross': point_list2polyline(cross_list)}
+        road_list.append(road_info)
+
+    save_model('./road/parallel.txt', road_list)
     return None
 
-# center()
-par()
+
+def add_end_point(src_road, target_road):
+    pt = src_road.seg_list[-1].end_point
+    min_dist, sel_seg = 1e10, None
+    for seg in target_road.seg_list:
+        p0, p1 = seg.begin_point, seg.end_point
+        d = point2segment([pt.px, pt.py], [p0.px, p0.py], [p1.px, p1.py])
+        if min_dist > d:
+            min_dist, sel_seg = d, seg
+    _, px, py = get_cross_point(src_road.seg_list[-1], sel_seg)
+    cross_pt = Point(px, py)
+    src_road.add_segment(Segment(pt, cross_pt))
+
+
+def add_begin_point(src_road, target_road):
+    pt = src_road.seg_list[0].begin_point
+    min_dist, sel_seg = 1e10, None
+    for seg in target_road.seg_list:
+        p0, p1 = seg.begin_point, seg.end_point
+        d = point2segment([pt.px, pt.py], [p0.px, p0.py], [p1.px, p1.py])
+        if min_dist > d:
+            min_dist, sel_seg = d, seg
+    _, px, py = get_cross_point(src_road.seg_list[0], sel_seg)
+    cross_pt = Point(px, py)
+    seg_list = src_road.seg_list
+    temp = [Segment(cross_pt, pt)]
+    for seg in seg_list:
+        temp.append(seg)
+    src_road.seg_list = temp
+
+
+def make_cross(raw_road, center_road, raw_dict):
+    """
+    生成道路交点
+    :param raw_road: 原始道路 list of Road
+    :param center_road: 道路中心线 list of Road
+    :param raw_dict: 原始道路集，用于延伸 dict { name: list of Road }
+                     表示该路的两条对向边
+    :return: 
+    """
+    cross_flag = 0               # 0: 无相交  1: 起点和道路相交  2: 终点和道路相交
+    # 检查道路两端点
+    begin_pt, end_pt = raw_road.point_list[0], raw_road.point_list[-1]
+    sel_seg = None
+    for i, seg in enumerate(center_road.seg_list):
+        if point2segment2(begin_pt, seg) < 50:
+            cross_flag, sel_seg = 1, seg
+            break
+        elif point2segment2(end_pt, seg) < 50:
+            cross_flag, sel_seg = 2, seg
+            break
+    # 起点延伸
+    if cross_flag == 1:
+        # 先检查是否平行
+        name = center_road.name
+        road_list = raw_dict[name]
+        if calc_include_angle2(raw_road.seg_list[0], sel_seg) > 0.8:
+            return
+        # 两条对向车道
+        # 首先确定最近的两条线段
+        seg0, seg1 = None, None
+        min_dist = 1e10
+        for seg in road_list[0].seg_list:
+            d = point2segment2(begin_pt, seg)
+            if d < min_dist:
+                min_dist, seg0 = d, seg
+        min_dist = 1e10
+        for seg in road_list[1].seg_list:
+            d = point2segment2(begin_pt, seg)
+            if d < min_dist:
+                min_dist, seg1 = d, seg
+        # 其次确定是否与道路已经相交
+        cross0, cross1 = False, False
+        for seg in raw_road.seg_list:
+            if is_segment_cross(seg0, seg):
+                cross0 = True
+            if is_segment_cross(seg1, seg):
+                cross1 = True
+        if not cross0 and not cross1:       # 两道路均未相交
+            d, px, py = get_cross_point(raw_road.seg_list[0], seg0)
+            if d > 0:       # 左转路口
+                pt1 = Point(px, py)
+                d, px, py = get_cross_point(raw_road.seg_list[0], seg1)
+                pt0 = Point(px, py)
+            else:
+                pt0 = Point(px, py)
+                d, px, py = get_cross_point(raw_road.seg_list[0], seg1)
+                pt1 = Point(px, py)
+            new_pt_list = [pt0, pt1]
+            for point in raw_road.point_list:
+                new_pt_list.append(point)
+            raw_road.point_list = new_pt_list
+            raw_road.gene_segment()
+        elif not cross0 and cross1:         # 与seg0未相交
+            d, px, py = get_cross_point(raw_road.seg_list[0], seg0)
+            # d必然<0，在右转路口，seg0为右转路段
+            pt0 = Point(px, py)
+            new_pt_list = [pt0]
+            for point in raw_road.point_list:
+                new_pt_list.append(point)
+            raw_road.point_list = new_pt_list
+            raw_road.gene_segment()
+        elif not cross1 and cross0:
+            d, px, py = get_cross_point(raw_road.seg_list[0], seg1)
+            # d必然<0，在右转路口，seg1为右转路段
+            pt0 = Point(px, py)
+            new_pt_list = [pt0]
+            for point in raw_road.point_list:
+                new_pt_list.append(point)
+            raw_road.point_list = new_pt_list
+            raw_road.gene_segment()
+    # 终点延伸
+    if cross_flag == 2:
+        # 先检查是否平行
+        name = center_road.name
+        road_list = raw_dict[name]
+        if calc_include_angle2(raw_road.seg_list[-1], sel_seg) > 0.8:
+            return
+        # 两条对向车道
+        # 首先确定最近的两条线段
+        seg0, seg1 = None, None
+        min_dist = 1e10
+        for seg in road_list[0].seg_list:
+            d = point2segment2(end_pt, seg)
+            if d < min_dist:
+                min_dist, seg0 = d, seg
+        min_dist = 1e10
+        for seg in road_list[1].seg_list:
+            d = point2segment2(end_pt, seg)
+            if d < min_dist:
+                min_dist, seg1 = d, seg
+        # 其次确定是否与道路已经相交
+        cross0, cross1 = False, False
+        for seg in raw_road.seg_list:
+            if is_segment_cross(seg0, seg):
+                cross0 = True
+            if is_segment_cross(seg1, seg):
+                cross1 = True
+        if not cross0 and not cross1:       # 两道路均未相交
+            d, px, py = get_cross_point(raw_road.seg_list[-1], seg0)
+            if d > 0:       # 左转路口
+                pt1 = Point(px, py)
+                d, px, py = get_cross_point(raw_road.seg_list[-1], seg1)
+                pt0 = Point(px, py)
+            else:
+                pt0 = Point(px, py)
+                d, px, py = get_cross_point(raw_road.seg_list[-1], seg1)
+                pt1 = Point(px, py)
+            raw_road.point_list.append(pt0)
+            raw_road.point_list.append(pt1)
+            raw_road.gene_segment()
+        elif not cross0 and cross1:         # 与seg0未相交
+            d, px, py = get_cross_point(raw_road.seg_list[-1], seg0)
+            pt0 = Point(px, py)
+            raw_road.point_list.append(pt0)
+            raw_road.gene_segment()
+        elif not cross1 and cross0:
+            d, px, py = get_cross_point(raw_road.seg_list[-1], seg1)
+            pt0 = Point(px, py)
+            raw_road.point_list.append(pt0)
+            raw_road.gene_segment()
+
+
+def cross():
+    """
+    读取parallel文件
+    自动匹配相近的路口，并将其存为road.txt
+    :return: 
+    """
+    center_data = load_model('./road/cut.txt')
+    raw_data = load_model('./road/parallel.txt')
+    raw_list = []      # Road
+    center_list = []
+    raw_dict = {}
+    # 读取文件
+    for road_info in raw_data:
+        name, point_list = road_info['name'], polyline2pt_list(road_info['path'])
+        # Road
+        road = Road(name, 0, road_info['rid'])
+        cross_list = polyline2pt_list(road_info['cross'])
+        road.set_cross_list(cross_list)
+        for pt in point_list:
+            road.add_point(pt)
+        road.gene_segment()
+        raw_list.append(road)
+        try:
+            raw_dict[name].append(road)
+        except KeyError:
+            raw_dict[name] = [road]
+
+    for i, road_info in enumerate(center_data):
+        name, point_list = road_info['name'], polyline2pt_list(road_info['polyline'])
+        # Road
+        road = Road(name, 0, i)
+        for pt in point_list:
+            road.add_point(pt)
+        road.gene_segment()
+        center_list.append(road)
+    # 处理
+    for i, raw_road in enumerate(raw_list):
+        for j, center_road in enumerate(center_list):
+            name0, name1 = raw_road.name, center_road.name
+            if name0 == name1:
+                continue
+            make_cross(raw_road, center_road, raw_dict)
+
+    network = []
+    for road in raw_list:
+        road_info = {'name': road.name, 'rid': road.rid,
+                     'polyline': point_list2polyline(road.point_list)}
+        network.append(road_info)
+    save_model('./road/road.txt', network)
+
+
+# merge()
+cross()
+
+

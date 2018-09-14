@@ -4,6 +4,8 @@ from ctypes import *
 
 import numpy as np
 
+from map_struct import Point, Segment
+
 dll = WinDLL("CoordTransDLL.dll")
 
 
@@ -69,6 +71,20 @@ def calc_bl_dist(pt0, pt1):
     x1, y1 = bl2xy(pt1[1], pt1[0])
     dist = calc_dist([x0, y0], [x1, y1])
     return dist
+
+
+def calc_include_angle2(seg0, seg1):
+    """
+    :param seg0: Segment
+    :param seg1: 
+    :return: cos a
+    """
+    v0 = np.array([seg0.end_point.px - seg0.begin_point.px, seg0.end_point.py - seg0.begin_point.py])
+    v1 = np.array([seg1.end_point.px - seg1.begin_point.px, seg1.end_point.py - seg1.begin_point.py])
+    dt = np.sqrt(np.dot(v0, v0)) * np.sqrt(np.dot(v1, v1))
+    if dt == 0:
+        return 0
+    return math.fabs(np.dot(v0, v1) / dt)
 
 
 def calc_included_angle(s0p0, s0p1, s1p0, s1p1):
@@ -152,11 +168,22 @@ def point_project(point, segment_point0, segment_point1):
     return [dx, dy], ac, state
 
 
+def point2segment2(point, segment):
+    """
+    计算点到线段距离(Point 版)
+    :param point: Point
+    :param segment: Segment
+    :return: dist
+    """
+    return point2segment([point.px, point.py], [segment.begin_point.px, segment.begin_point.py],
+                         [segment.end_point.px, segment.end_point.py])
+
+
 def point2segment(point, segment_point0, segment_point1):
     """
-    :param point: point to be matched
-    :param segment_point0: segment
-    :param segment_point1: 
+    :param point: point to be matched, [px(double), py(double)] 
+    :param segment_point0: segment [px, py]
+    :param segment_point1: [px, py]
     :return: dist from point to segment
     """
     x, y = point[0:2]
@@ -218,13 +245,13 @@ def line2grid(segment_point0, segment_point1):
 def get_parallel(segment_point0, segment_point1, d):
     """
     获取离线段距离为d的两条平行线段
-    :param segment_point0: 线段端点0
-    :param segment_point1: 线段端点1
+    :param segment_point0: 线段端点0, Point
+    :param segment_point1: 线段端点1, Point
     :param d: 距离d
-    :return: segment1, segment2
+    :return: segment1(Segment), segment2,
     """
-    x0, y0 = segment_point0[0:2]
-    x1, y1 = segment_point1[0:2]
+    x0, y0 = segment_point0.px, segment_point0.py
+    x1, y1 = segment_point1.px, segment_point1.py
     vec = np.array([x1 - x0, y1 - y0])
     y = np.linalg.norm(vec)
     z = vec / y
@@ -232,32 +259,42 @@ def get_parallel(segment_point0, segment_point1, d):
     h1 = np.array([-z[1], z[0]])
     xh0, yh0 = x0 + h0[0] * d, y0 + h0[1] * d
     xh1, yh1 = x1 + h0[0] * d, y1 + h0[1] * d
-    segment0 = [[xh0, yh0], [xh1, yh1]]
+    p0, p1 = Point(xh0, yh0), Point(xh1, yh1)
+    segment0 = Segment(begin_point=p0, end_point=p1, name='')
+    # segment0 = [[xh0, yh0], [xh1, yh1]]
     xh0, yh0 = x0 + h1[0] * d, y0 + h1[1] * d
     xh1, yh1 = x1 + h1[0] * d, y1 + h1[1] * d
-    segment1 = [[xh0, yh0], [xh1, yh1]]
+    # segment1 = [[xh0, yh0], [xh1, yh1]]
+    p0, p1 = Point(xh0, yh0), Point(xh1, yh1)
+    segment1 = Segment(begin_point=p0, end_point=p1, name='')
     return segment0, segment1
 
 
 def get_line_equation(segment_point0, segment_point1):
-    x0, y0 = segment_point0[0:2]
-    x1, y1 = segment_point1[0:2]
+    """
+    Ax + By + C = 0
+    :param segment_point0: Point
+    :param segment_point1: 
+    :return: A, B, C
+    """
+    x0, y0 = segment_point0.px, segment_point0.py
+    x1, y1 = segment_point1.px, segment_point1.py
     a, b, c = y1 - y0, x0 - x1, x1 * y0 - y1 * x0
     d = math.sqrt(a * a + b * b)
     a, b, c = a / d, b / d, c / d
     return a, b, c
 
 
-def get_segment_cross_point(segment0, segment1):
+def get_cross_point(segment0, segment1):
     """
     获得两线段交点（在延长线上的交点）
-    :param segment0: [point0, point1]
+    :param segment0: Segment
     :param segment1: 
-    :return:
+    :return: d 左手边>0 右手边<0 平行=0    px, py
     """
-    sp0, sp1 = segment0[0:2]
+    sp0, sp1 = segment0.begin_point, segment0.end_point
     a0, b0, c0 = get_line_equation(sp0, sp1)
-    sp0, sp1 = segment1[0:2]
+    sp0, sp1 = segment1.begin_point, segment1.end_point
     a1, b1, c1 = get_line_equation(sp0, sp1)
 
     d = a0 * b1 - a1 * b0
@@ -272,18 +309,68 @@ def get_segment_cross_point(segment0, segment1):
 def is_segment_cross(segment0, segment1):
     """
     计算两线段是否相交
-    :param segment0: [pt1, pt2....ptn]
-    here pt is [px, py]
+    :param segment0: Segment
     :param segment1:
     :return: bool
     """
-    ZERO = 1e-10
-    a, b = segment0[0:2]
-    c, d = segment1[0:2]
-    ac = np.array([c[0] - a[0], c[1] - a[1]])
-    ad = np.array([d[0] - a[0], d[1] - a[1]])
-    bc = np.array([c[0] - b[0], c[1] - b[1]])
-    bd = np.array([d[0] - b[0], d[1] - b[1]])
+    ZERO = 1e-4
+    a, b = segment0.begin_point, segment0.end_point
+    c, d = segment1.begin_point, segment1.end_point
+    ac = np.array([c.px - a.px, c.py - a.py])
+    ad = np.array([d.px - a.px, d.py - a.py])
+    bc = np.array([c.px - b.px, c.py - b.py])
+    bd = np.array([d.px - b.px, d.py - b.py])
     ca, cb, da, db = -ac, -bc, -ad, -bd
-    return np.cross(ac, ad) * np.cross(bc, bd) <= ZERO and np.cross(ca, cb) * np.cross(da, db) <= ZERO
+    w0, w1 = np.cross(ac, ad) * np.cross(bc, bd), np.cross(ca, cb) * np.cross(da, db)
+    return w0 <= ZERO and w1 <= ZERO
 
+
+def cut_y(point_list, y):
+    """
+    截取y以下的线段
+    :param point_list: list[Point] 
+    :param y: thread y
+    :return: new_point_list[Point]
+    """
+    new_point_list = []
+    last_point = None
+    for point in point_list:
+        if point.py < y:
+            new_point_list.append(point)
+        else:
+            cur_seg = Segment(last_point, point)
+            par = Segment(Point(0, y), Point(1, y))
+            _, px, py = get_cross_point(cur_seg, par)
+            new_point_list.append(Point(px, py))
+            break
+        last_point = point
+    return new_point_list
+
+
+def cut_x(point_list, x):
+    """
+    截取x以右的线段
+    :param point_list: list[Point] 
+    :param x: thread x
+    :return: new_point_list[Point]
+    """
+    new_point_list = []
+    last_point = None
+    cut = False
+    for point in point_list:
+        if point.px < x:
+            pass
+        elif not cut:
+            if last_point is None:
+                new_point_list.append(point)
+                cut = True
+            else:
+                cur_seg = Segment(last_point, point)
+                par = Segment(Point(x, 0), Point(x, 1))
+                _, px, py = get_cross_point(cur_seg, par)
+                new_point_list.append(Point(px, py))
+                cut = True
+        else:
+            new_point_list.append(point)
+        last_point = point
+    return new_point_list
