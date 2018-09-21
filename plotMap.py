@@ -20,17 +20,11 @@ def main():
     plt.show()
 
 
-def plot_path(path, c):
-    if path == u'':
+def plot_path(xy_items, c):
+    if len(xy_items) == 0:
         return
-    xy_items = path.split(';')
-    x_list, y_list = [], []
-    for xy in xy_items:
-        x, y = map(float, xy.split(',')[0:2])
-        # x, y = bl2xy(lat, lng)
-        x_list.append(x)
-        y_list.append(y)
-    plt.plot(x_list, y_list, linestyle='', color=c, marker='o', markersize=5)
+    x_list, y_list = zip(*xy_items)
+    plt.plot(x_list, y_list, linestyle='', color=c, marker='s', markersize=3)
     # plt.plot(x_list, y_list, color='k')
 
 
@@ -108,19 +102,37 @@ def main_show():
     """
     fig1 = plt.figure(figsize=(12, 6))
     ax = fig1.add_subplot(111)
-    filename = './road/merge.txt'
+    filename = './road/center0.txt'
     data = load_model(filename)
     for road in data:
         pl = road['polyline']
         xy_items = pl.split(';')
         x_list, y_list = [], []
         for xy in xy_items:
-            lng, lat = map(float, xy.split(',')[0:2])
-            x, y = bl2xy(lat, lng)
+            x, y = map(float, xy.split(',')[0:2])
+            # x, y = bl2xy(lat, lng)
             x_list.append(x)
             y_list.append(y)
-        # plt.plot(x_list, y_list, marker='o', markersize=5)
-        plt.plot(x_list, y_list)
+
+        plt.plot(x_list, y_list, marker='o', linestyle='-', color='darkorange',
+                 markersize=2)
+        plt.plot([x_list[0]], [y_list[0]], marker='o', markersize=5, linestyle='')
+        plt.plot([x_list[-1]], [y_list[-1]], marker='o', markersize=5, linestyle='')
+        try:
+            rid = road['rid']
+            plt.text((x_list[0] + x_list[-1]) / 2, (y_list[0] + y_list[-1]) / 2, str(rid))
+        except KeyError:
+            pass
+
+        try:
+            xy_list = []
+            cross = road['cross']
+            for pt in cross:
+                xy_list.append([pt['px'], pt['py']])
+            plot_path(xy_list, 'b')
+        except KeyError:
+            pass
+        # plt.plot(x_list, y_list)
 
     plt.xlim(75550, 78948)
     plt.ylim(83080, 84958)
@@ -170,4 +182,4 @@ def main_show1():
     plt.show()
 
 
-main_show1()
+main_show()

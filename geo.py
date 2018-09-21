@@ -144,6 +144,19 @@ def point_project_edge(point, edge):
     return point_project(point, sp0, sp1)
 
 
+def point_project_segment(point, segment):
+    """
+    :param point: Point
+    :param segment: Segment
+    :return: Point
+    """
+    x, y = point.px, point.py
+    x0, y0 = segment.begin_point.px, segment.begin_point.py
+    x1, y1 = segment.end_point.px, segment.end_point.py
+    pt, _, _ = point_project([x, y], [x0, y0], [x1, y1])
+    return Point(pt[0], pt[1])
+
+
 def point_project(point, segment_point0, segment_point1):
     """
     :param point: point to be matched
@@ -374,3 +387,39 @@ def cut_x(point_list, x):
             new_point_list.append(point)
         last_point = point
     return new_point_list
+
+
+def get_dist(point0, point1):
+    """
+    :param point0: Point
+    :param point1: Point
+    :return: 
+    """
+    return calc_dist([point0.px, point0.py], [point1.px, point1.py])
+
+
+def get_segment_length(segment):
+    """
+    :param segment: Segment
+    :return: 
+    """
+    return get_dist(segment.begin_point, segment.end_point)
+
+
+def cut_from_segment(segment, d):
+    """
+    从segment里面切开距离为d的线段
+    :param segment: Segment
+    :param d: 
+    :return: segment0, segment1
+    """
+    x0, y0 = segment.begin_point.px, segment.begin_point.py
+    x1, y1 = segment.end_point.px, segment.end_point.py
+    vec = np.array([x1 - x0, y1 - y0])
+    y = np.linalg.norm(vec)
+    z0 = vec / y         # 单位向量
+    xd, yd = x0 + z0[0] * d, y0 + z0[1] * d
+    cr = Point(xd, yd)
+    s0 = Segment(segment.begin_point, cr)
+    s1 = Segment(cr, segment.end_point)
+    return s0, s1

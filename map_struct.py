@@ -4,6 +4,8 @@
 # @简介    : 道路数据结构
 # @File    : map_struct.py
 
+import math
+
 
 def segment2point(seg_list):
     """
@@ -22,6 +24,13 @@ class Point:
     """
     def __init__(self, px, py):
         self.px, self.py = px, py
+        self.cross = 0      # 是否为交点
+        self.cross_name = ""
+        self.cross_seg = -1             # 相交时本线段的序号
+        self.cross_other_seg = -1       # 对面相交线段的序号
+
+    def __eq__(self, other):
+        return math.fabs(self.px - other.px) < 1e-5 and math.fabs(self.py - other.py) < 1e-5
 
 
 class Segment:
@@ -66,6 +75,7 @@ class Road:
         self.point_list = []
         self.rid = rid
         self.cross_list = []
+        self.es, self.bs = 0, 0         # end state, begin state
 
     def set_rid(self, rid):
         self.rid = rid
