@@ -87,6 +87,16 @@ def calc_include_angle2(seg0, seg1):
     return math.fabs(np.dot(v0, v1) / dt)
 
 
+def moid(x):
+    ZERO = 1e-5
+    if x < -ZERO:
+        return -1
+    elif x > ZERO:
+        return 1
+    else:
+        return 0
+
+
 def calc_included_angle(s0p0, s0p1, s1p0, s1p1):
     """
     计算夹角
@@ -326,7 +336,6 @@ def is_segment_cross(segment0, segment1):
     :param segment1:
     :return: bool
     """
-    ZERO = 1e-4
     a, b = segment0.begin_point, segment0.end_point
     c, d = segment1.begin_point, segment1.end_point
     ac = np.array([c.px - a.px, c.py - a.py])
@@ -334,8 +343,9 @@ def is_segment_cross(segment0, segment1):
     bc = np.array([c.px - b.px, c.py - b.py])
     bd = np.array([d.px - b.px, d.py - b.py])
     ca, cb, da, db = -ac, -bc, -ad, -bd
-    w0, w1 = np.cross(ac, ad) * np.cross(bc, bd), np.cross(ca, cb) * np.cross(da, db)
-    return w0 <= ZERO and w1 <= ZERO
+    w0, w1 = moid(np.cross(ac, ad)) * moid(np.cross(bc, bd)), \
+             moid(np.cross(ca, cb)) * moid(np.cross(da, db))
+    return w0 <= 0 and w1 <= 0
 
 
 def cut_y(point_list, y):
