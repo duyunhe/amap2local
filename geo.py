@@ -1,10 +1,8 @@
 # coding=utf-8
 import math
 from ctypes import *
-
 import numpy as np
-
-from map_struct import Point, Segment
+from map_struct import Point, Segment, Vector
 
 dll = WinDLL("CoordTransDLL.dll")
 
@@ -88,7 +86,7 @@ def calc_include_angle2(seg0, seg1):
 
 
 def moid(x):
-    ZERO = 1e-5
+    ZERO = 1e-4
     if x < -ZERO:
         return -1
     elif x > ZERO:
@@ -329,6 +327,10 @@ def get_cross_point(segment0, segment1):
         return d, px, py
 
 
+def vec_cross(vec0, vec1):
+    return vec0.px * vec1.py - vec1.px * vec0.py
+
+
 def is_segment_cross(segment0, segment1):
     """
     计算两线段是否相交
@@ -338,13 +340,16 @@ def is_segment_cross(segment0, segment1):
     """
     a, b = segment0.begin_point, segment0.end_point
     c, d = segment1.begin_point, segment1.end_point
-    ac = np.array([c.px - a.px, c.py - a.py])
-    ad = np.array([d.px - a.px, d.py - a.py])
-    bc = np.array([c.px - b.px, c.py - b.py])
-    bd = np.array([d.px - b.px, d.py - b.py])
+    ac = Vector(c.px - a.px, c.py - a.py)
+    ad = Vector(d.px - a.px, d.py - a.py)
+    bc = Vector(c.px - b.px, c.py - b.py)
+    bd = Vector(d.px - b.px, d.py - b.py)
     ca, cb, da, db = -ac, -bc, -ad, -bd
-    w0, w1 = moid(np.cross(ac, ad)) * moid(np.cross(bc, bd)), \
-             moid(np.cross(ca, cb)) * moid(np.cross(da, db))
+    c0, c1 = vec_cross(ac, ad), vec_cross(bc, bd)
+    c2, c3 = vec_cross(ca, cb), vec_cross(da, db)
+    w0 = moid(c0) * moid(c1)
+    w1 = moid(c2) * moid(c3)
+
     return w0 <= 0 and w1 <= 0
 
 

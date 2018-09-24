@@ -18,6 +18,17 @@ def segment2point(seg_list):
     return point_list
 
 
+class Vector:
+    """
+    向量
+    """
+    def __init__(self, px, py):
+        self.px, self.py = px, py
+
+    def __neg__(self):
+        return Vector(-self.px, -self.py)
+
+
 class Point:
     """
     点，px py 
