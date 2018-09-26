@@ -24,7 +24,7 @@ def plot_path(xy_items, c):
     if len(xy_items) == 0:
         return
     x_list, y_list = zip(*xy_items)
-    plt.plot(x_list, y_list, linestyle='', color=c, marker='s', markersize=5)
+    plt.plot(x_list, y_list, linestyle='', color=c, marker='s', markersize=3)
     # plt.plot(x_list, y_list, color='k')
 
 
@@ -113,16 +113,16 @@ def main_show():
             # x, y = bl2xy(lat, lng)
             x_list.append(x)
             y_list.append(y)
-            # if road['name'] == u'紫金港路':
+            # if road['rid'] == 19:
             #     plt.text(x + 5, y + 5, str(i))
 
-        plt.plot(x_list, y_list, marker='', linestyle='-', color='darkorange',
-                 markersize=3)
-        # plt.plot([x_list[0]], [y_list[0]], marker='o', markersize=5, linestyle='')
-        # plt.plot([x_list[-1]], [y_list[-1]], marker='o', markersize=5, linestyle='')
+        plt.plot(x_list, y_list, marker='o', linestyle='-', color='darkorange',
+                 markersize=2)
+        plt.plot([x_list[0]], [y_list[0]], marker='o', markersize=3, color='r', linestyle='')
+        plt.plot([x_list[-1]], [y_list[-1]], marker='o', markersize=3, color='g', linestyle='')
         try:
             rid = road['rid']
-            plt.text((x_list[0] + x_list[-1]) / 2, (y_list[0] + y_list[-1]) / 2, str(rid))
+            # plt.text((x_list[0] + x_list[-1]) / 2, (y_list[0] + y_list[-1]) / 2, str(rid))
         except KeyError:
             pass
 
@@ -151,11 +151,11 @@ def main_show1():
     fig1 = plt.figure(figsize=(12, 6))
     ax = fig1.add_subplot(111)
 
-    filename = './road/par0.txt'
+    filename = './road/parallel.txt'
     data = load_model(filename)
     for road in data:
         pl = road['polyline']
-        # rid = road['rid']
+        rid = road['rid']
         xy_items = pl.split(';')
         x_list, y_list = [], []
         for i, xy in enumerate(xy_items):
@@ -163,15 +163,14 @@ def main_show1():
             # x, y = bl2xy(lat, lng)
             x_list.append(x)
             y_list.append(y)
-            # plt.text(x + 5, y + 5, str(i))
         # plt.plot(x_list, y_list, color='darkblue')
         plt.plot(x_list, y_list, marker='', markersize=2, color='darkblue', linewidth=1)
         # plt.text(x_list[0], y_list[0], str(rid))
 
         # if rid == 1:
         #     try:
-        #         entrance = road['entrance']
-        #         plot_path(entrance, 'r')
+        #         entrance = road['entrance'](entrance, 'r')
+        #         plot_path
         #         ext = road['exit']
         #         plot_path(ext, 'g')
         #     except KeyError:
@@ -184,4 +183,4 @@ def main_show1():
     plt.show()
 
 
-main_show1()
+main_show()

@@ -6,11 +6,11 @@
 
 import json
 import math
-import numpy as np
+
 from DBConn import oracle_util
-from geo import bl2xy, xy2bl, calc_dist, point2segment, line2grid, \
-    get_cross_point, is_segment_cross, get_parallel, point2segment2, calc_include_angle2, \
-    cut_x, cut_y, get_dist, get_segment_length, cut_from_segment
+from geo import bl2xy, xy2bl, calc_dist, point2segment, get_cross_point, is_segment_cross, get_parallel, point2segment2, \
+    calc_include_angle2, \
+    cut_x, cut_y
 from map_struct import Road, Point, Segment
 
 
@@ -424,21 +424,21 @@ def split():
 
 
 def save_db():
-    road_data = load_model('./road/split.txt')
+    road_data = load_model('../road/par1.txt')
     conn = oracle_util.get_connection()
     cursor = conn.cursor()
-    road_index = 10001
     for road in road_data:
-        name, path = road['name'], polyline2path(road['polyline'])
-        sql = "insert into tb_road_statevalues(rid, road_name, road_" \
-              "level, road_desc) (:1, :2, :3, :4)"
-        tup = (road_index, name, 2, road['ort'])
-        cursor.execute(sql, tup)
-        sql = "insert into tb_road_point(rid, seq, longitude, " \
-              "latitude) values(:1, :2, :3, :4)"
+        name, path, road_index = road['name'], polyline2path(road['polyline']), road['rid']
+        # sql = "insert into tb_road_state (rid, road_name, direction, road_" \
+        #       "level, road_desc, def_speed) values (:1, :2, :3, :4, :5, :6)"
+        # tup = (road_index, name, 0, 1, 0, 0)
+        # cursor.execute(sql, tup)
+        sql = "insert into tb_road_point_on_map(rid, seq, longitude, " \
+              "latitude, map_level) values(:1, :2, :3, :4, 1)"
         tup_list = []
         for i, pt in enumerate(path):
-            lng, lat = map(float, pt.split(',')[0:2])
+            px, py = map(float, pt.split(',')[0:2])
+            lat, lng = xy2bl(px, py)
             tup = (road_index, i, lng, lat)
             tup_list.append(tup)
         cursor.executemany(sql, tup_list)

@@ -1,10 +1,12 @@
 # coding=utf-8
 import math
 from ctypes import *
+
 import numpy as np
+
 from map_struct import Point, Segment, Vector
 
-dll = WinDLL("CoordTransDLL.dll")
+dll = WinDLL("E:/job/amap2local/dll/CoordTransDLL.dll")
 
 
 class BLH(Structure):
@@ -276,8 +278,8 @@ def get_parallel(segment_point0, segment_point1, d):
     vec = np.array([x1 - x0, y1 - y0])
     y = np.linalg.norm(vec)
     z = vec / y
-    h0 = np.array([z[1], -z[0]])
-    h1 = np.array([-z[1], z[0]])
+    h0 = np.array([z[1], -z[0]])            # 右手边
+    h1 = np.array([-z[1], z[0]])            # 左手边
     xh0, yh0 = x0 + h0[0] * d, y0 + h0[1] * d
     xh1, yh1 = x1 + h0[0] * d, y1 + h0[1] * d
     p0, p1 = Point(xh0, yh0), Point(xh1, yh1)

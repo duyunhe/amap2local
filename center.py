@@ -4,15 +4,16 @@
 # @简介    : 中心线的处理
 # @File    : center.py
 
-import json
 import math
+
 import numpy as np
-from geo import bl2xy, xy2bl, calc_dist, point2segment, line2grid, \
-    get_cross_point, is_segment_cross, get_parallel, point2segment2, calc_include_angle2, \
-    cut_x, cut_y, get_dist, get_segment_length, cut_from_segment
-from map_struct import Road, Point, Segment
+
+from geo import line2grid, \
+    get_cross_point, is_segment_cross, point2segment2, calc_include_angle2, \
+    get_dist, get_segment_length, cut_from_segment
+from map_struct import Road, Point
 from refineMap import load_model, save_model, xylist2polyline, dog_last, \
-    polyline2xylist, polyline2path, coord2xy, get_diff, load_model2road, save_road2model
+    polyline2path, coord2xy, get_diff, load_model2road, save_road2model
 
 
 def center():
@@ -277,7 +278,7 @@ def center_split3(road):
     dist0 = 0
     for seg in temp:
         dist0 += get_segment_length(seg)
-    if dist0 < 100 and len(road_seg_list) > 0:
+    if dist0 < 150 and len(road_seg_list) > 0:
         road_seg_list[-1].extend(temp)
     else:
         road_seg_list.append(temp)
