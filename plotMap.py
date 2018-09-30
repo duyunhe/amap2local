@@ -122,7 +122,7 @@ def main_show():
         plt.plot([x_list[-1]], [y_list[-1]], marker='o', markersize=3, color='g', linestyle='')
         try:
             rid = road['rid']
-            # plt.text((x_list[0] + x_list[-1]) / 2, (y_list[0] + y_list[-1]) / 2, str(rid))
+            plt.text((x_list[0] + x_list[-1]) / 2, (y_list[0] + y_list[-1]) / 2, str(rid))
         except KeyError:
             pass
 

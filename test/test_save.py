@@ -4,6 +4,6 @@
 # @简介    : 
 # @File    : test_save.py
 
-from refineMap import save_db
+from refineMap import update_road
 
-save_db()
+update_road()

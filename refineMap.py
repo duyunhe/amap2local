@@ -41,9 +41,11 @@ def load_model2road(filename):
     road_list = []
     for i, road_info in enumerate(data):
         name, point_list = road_info['name'], polyline2pt_list(road_info['polyline'])
+        cross_list = road_info['cross']
         # Road
         road = Road(name, 0, i)
         road.set_point_list(point_list)
+        road.set_cross_list(cross_list)
         road.gene_segment()
         road_list.append(road)
     return road_list
@@ -423,8 +425,44 @@ def split():
     save_model('./road/split.txt', new_data)
 
 
+def save_speed():
+    conn = oracle_util.get_connection()
+    cursor = conn.cursor()
+    sql = "insert into tb_road_def_speed values(:1, :2)"
+    tup_list = []
+    for i in range(330):
+        tup = (i, 40)
+        tup_list.append(tup)
+    cursor.executemany(sql, tup_list)
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+
+def update_road():
+    conn = oracle_util.get_connection()
+    cursor = conn.cursor()
+    sql = "update tb_road_state set direction = 0"
+    cursor.execute(sql)
+    sql = "update tb_road_state set direction = 1 where rid = :1"
+    tup_list = []
+    for i in range(140, 148, 1):
+        tup = (i, )
+        tup_list.append(tup)
+    for i in range(275, 295, 2):
+        tup = (i, )
+        tup_list.append(tup)
+    for i in range(88, 106, 2):
+        tup = (i, )
+        tup_list.append(tup)
+    cursor.executemany(sql, tup_list)
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+
 def save_db():
-    road_data = load_model('../road/par1.txt')
+    road_data = load_model('../road/10_offset/par1.txt')
     conn = oracle_util.get_connection()
     cursor = conn.cursor()
     for road in road_data:
@@ -434,7 +472,7 @@ def save_db():
         # tup = (road_index, name, 0, 1, 0, 0)
         # cursor.execute(sql, tup)
         sql = "insert into tb_road_point_on_map(rid, seq, longitude, " \
-              "latitude, map_level) values(:1, :2, :3, :4, 1)"
+              "latitude, map_level) values(:1, :2, :3, :4, 2)"
         tup_list = []
         for i, pt in enumerate(path):
             px, py = map(float, pt.split(',')[0:2])
@@ -444,6 +482,8 @@ def save_db():
         cursor.executemany(sql, tup_list)
         road_index += 1
     conn.commit()
+    cursor.close()
+    conn.close()
 
 
 def dog_last(path):
