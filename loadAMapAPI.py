@@ -14,6 +14,38 @@ my_key = "b41e8fba1baa7e243b8f09d8aa4d941c"
 jt_key = "0a54a59bdc431189d9405b3f2937921a"
 
 
+def get_all_main_roads(lng0, lat0, lng1, lat1):
+    """
+    获取给定矩形范围内的主要道路名称
+    :param lng0: longitude 0
+    :param lat0: latitude 0
+    :param lng1: longitude 1
+    :param lat1: latitude 1
+    :return: name set
+    """
+    req = 'https://restapi.amap.com/v3/traffic/status/rectangle?city=杭州市' \
+          '&key={0}&extensions=all&level=4&rectangle=' \
+          ''.format(jt_key)
+
+    try:
+        f = urllib2.urlopen(req)
+        response = f.read()
+        temp = json.loads(response)
+        ti = temp['trafficinfo']
+        roads = ti['roads']
+        x = set()
+        for r in roads:
+            try:
+                name = r['name']
+            except KeyError:
+                continue
+            x.add(name)
+
+    except Exception as e:
+        print e.message
+    return x
+
+
 def process_traffic_status(road_name):
     req = 'https://restapi.amap.com/v3/traffic/status/road?name={1}&city=杭州市' \
                '&key={0}&extensions=all'.format(jt_key, road_name)
@@ -153,4 +185,21 @@ def main():
     fp.close()
 
 
-main()
+# main()
+
+
+def get():
+    l1, b1 = 120.376929, 30.09851
+    l0, b0 = 120.046824, 30.362365
+    dl, db = 120.095039 - 120.058991, 30.309158 - 30.348718
+    while b0 <= b1:
+        lt = l0
+        while l0 <= l1:
+            r = get_all_main_roads(l0, l0 + dl + )
+            l0 += dl
+    r = get_all_main_roads()
+    for x in r:
+        print x
+
+
+get()
