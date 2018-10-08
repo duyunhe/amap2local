@@ -6,7 +6,7 @@ import numpy as np
 
 from map_struct import Point, Segment, Vector
 
-dll = WinDLL("E:/job/amap2local/dll/CoordTransDLL.dll")
+dll = WinDLL("./dll/CoordTransDLL.dll")
 
 
 class BLH(Structure):

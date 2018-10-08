@@ -4,12 +4,42 @@
 # @简介    : 多进程跑center程序
 # @File    : multi.py
 
+import json
 import math
 import multiprocessing
 
 import numpy as np
 
-from refineMap import load_model, xylist2polyline, polyline2path, save_model
+
+def save_model(filename, road_data):
+    js = json.dumps(road_data, ensure_ascii=False).encode('utf-8')
+    fp = open(filename, 'w')
+    fp.write(js)
+    fp.write('\n')
+    fp.close()
+
+
+def load_model(filename):
+    try:
+        fp = open(filename)
+        line = fp.readline().strip('\n')
+        data = json.loads(line)
+        fp.close()
+    except ValueError:
+        data = []
+    except IOError:
+        data = []
+    return data
+
+
+def polyline2path(pll):
+    items = pll.split(';')
+    return items
+
+
+def xylist2polyline(xy_list):
+    str_list = ["{0:.2f},{1:.2f}".format(xy[0], xy[1]) for xy in xy_list]
+    return ';'.join(str_list)
 
 
 def work(idx, global_lock, road_list, return_list):
