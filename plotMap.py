@@ -151,11 +151,11 @@ def main_show1():
     fig1 = plt.figure(figsize=(12, 6))
     ax = fig1.add_subplot(111)
 
-    filename = './road/parallel.txt'
+    filename = './road/merge.txt'
     data = load_model(filename)
     for road in data:
         pl = road['polyline']
-        rid = road['rid']
+        # rid = road['rid']
         xy_items = pl.split(';')
         x_list, y_list = [], []
         for i, xy in enumerate(xy_items):
@@ -176,11 +176,11 @@ def main_show1():
         #     except KeyError:
         #         pass
 
-    plt.xlim(75550, 78948)
-    plt.ylim(83080, 84958)
+    # plt.xlim(75550, 78948)
+    # plt.ylim(83080, 84958)
     plt.subplots_adjust(left=0.06, right=0.98, bottom=0.05, top=0.96)
     # plt.savefig("road.png", dpi=200)
     plt.show()
 
 
-main_show()
+main_show1()

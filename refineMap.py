@@ -140,6 +140,7 @@ def process(coord, path_list):
 def merge():
     road_temp = {}
     road_data = load_model('./road/raw.txt')
+    # print len(road_data)
     for road in road_data:
         pl = road['polyline']
         name = road['name']
@@ -874,5 +875,23 @@ def cross():
     save_model('./road/road.txt', network)
 
 
+def trans():
+    """
+    先转换merge后的坐标系
+    :return: 
+    """
+    road_list = load_model('./road/merge.txt')
+    for road in road_list:
+        pll = road['polyline']
+        bllist = polyline2xylist(pll)
+        xylist = []
+        for lng, lat in bllist:
+            x, y = bl2xy(lat, lng)
+            xylist.append([x, y])
+        strxy = xylist2polyline(xylist)
+        road['polyline'] = strxy.decode('utf-8')
+    save_model('./road/merge_xy.txt', road_list)
 
+
+# merge()
 

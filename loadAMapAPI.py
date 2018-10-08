@@ -8,6 +8,8 @@
 import json
 import urllib2
 
+from refineMap import load_model
+
 data_idx = 0
 param_list = []
 my_key = "b41e8fba1baa7e243b8f09d8aa4d941c"
@@ -24,8 +26,8 @@ def get_all_main_roads(lng0, lat0, lng1, lat1):
     :return: name set
     """
     req = 'https://restapi.amap.com/v3/traffic/status/rectangle?city=杭州市' \
-          '&key={0}&extensions=all&level=4&rectangle=' \
-          ''.format(jt_key)
+          '&key={0}&extensions=all&level=5&rectangle={1},{2};{3},{4}' \
+          .format(jt_key, lng0, lat0, lng1, lat1)
 
     try:
         f = urllib2.urlopen(req)
@@ -40,19 +42,22 @@ def get_all_main_roads(lng0, lat0, lng1, lat1):
             except KeyError:
                 continue
             x.add(name)
-
+        return x
     except Exception as e:
         print e.message
-    return x
+    return []
 
 
 def process_traffic_status(road_name):
     req = 'https://restapi.amap.com/v3/traffic/status/road?name={1}&city=杭州市' \
-               '&key={0}&extensions=all'.format(jt_key, road_name)
+               '&key={0}&extensions=base'.format(jt_key, road_name)
     try:
         f = urllib2.urlopen(req)
         response = f.read()
         temp = json.loads(response)
+        if temp['info'] != u'OK':
+            print "process traffic status", road_name
+            return None
         ti = temp['trafficinfo']
         roads = ti['roads']
         x = []
@@ -69,6 +74,7 @@ def process_traffic_status(road_name):
             x.append(road_data)
 
     except Exception as e:
+        print road_name
         print e.message
     return x
 
@@ -171,35 +177,49 @@ def batch_path_fetch(query_list, fp):
 
 
 def main():
-    js_data = []
-    road_list = ['文一路', '文二路', '文三路', '古翠路', '保俶北路', '天目山路',
-                 '学院路', '教工路', '莫干山路', '文一西路', '文二西路', '文三西路',
-                 '古墩路', '丰潭路', '紫金港路', '余杭塘路']
+    raw_data = load_model('./road/raw.txt')
+    road_set = set()
+    for road in raw_data:
+        road_set.add(road['name'].encode('utf-8'))
+    print len(road_set)
+    fp0 = open('./road/road_name.txt')
+    road_list = []
+    for line in fp0.readlines():
+        road_name = line.strip('\n')
+        if road_name not in road_set:
+            road_list.append(road_name)
 
     fp = open('./road/raw.txt', 'w')
     for road_name in road_list:
-        js_data.extend(process_traffic_status(road_name))
-    js = json.dumps(js_data, ensure_ascii=False).encode('utf-8')
+        res = process_traffic_status(road_name)
+        if res is not None:
+            raw_data.extend(res)
+    js = json.dumps(raw_data, ensure_ascii=False).encode('utf-8')
     fp.write(js)
     fp.write('\n')
     fp.close()
-
 
 # main()
 
 
 def get():
-    l1, b1 = 120.376929, 30.09851
-    l0, b0 = 120.046824, 30.362365
-    dl, db = 120.095039 - 120.058991, 30.309158 - 30.348718
+    l1, b1 = 120.376929, 30.362365
+    l0, b0 = 120.046824, 30.09851
+    dl, db = 120.095039 - 120.058991, 30.348718 - 30.309158
+    road_set = set()
     while b0 <= b1:
         lt = l0
         while l0 <= l1:
-            r = get_all_main_roads(l0, l0 + dl + )
+            r = get_all_main_roads(l0, b0, l0 + dl, b0 + db)
+            for x in r:
+                road_set.add(x)
             l0 += dl
-    r = get_all_main_roads()
-    for x in r:
+        b0 += db
+        l0 = lt
+
+    for x in road_set:
         print x
 
 
-get()
+main()
+

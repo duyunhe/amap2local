@@ -483,4 +483,4 @@ def center_merge(road0, road1):
         road0.es, road1.bs = 1, 1
 
 
-center3()
+center()
