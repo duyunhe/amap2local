@@ -9,23 +9,22 @@ import multiprocessing
 
 import numpy as np
 
-from refineMap import load_model, xylist2polyline, polyline2path
+from refineMap import load_model, xylist2polyline, polyline2path, save_model
 
 
-def work(idx, global_lock, road_list):
+def work(idx, global_lock, road_list, return_list):
     """ 
     :param idx: 序号
     :param global_lock: 全局锁
     :param road_list: 待处理的道路
+    :param return_list: 返回的center line道路
     :return: 
     """
-    ret_list = []
     for name, road in road_list:
         xy_list = grid_center_line(global_lock, name, road)
         polyline = xylist2polyline(xy_list)
         center_line = {'name': name, 'polyline': polyline}
-        ret_list.append(center_line)
-    return ret_list
+        return_list.append(center_line)
 
 
 def get_diff(seg_list0, seg_list1, point):
@@ -269,15 +268,18 @@ if __name__ == "__main__":
         name = road_info['name']
         exist_road.append(name)
 
-    road_center_list = []
     for name, road_list in road_dict.iteritems():
         if name in exist_road:
             continue
         parse_list.append([name, road_list])
 
-    for i in range(6):
-        p = multiprocessing.Process(target=work, args=(i, lock, parse_list[i::6]))
-        # 加了锁，分成六部分并行处理
+    manager = multiprocessing.Manager()
+    ret_list = manager.list()
+    # for road in temp_list:
+    #     ret_list.append(road)
+    for i in range(3):
+        p = multiprocessing.Process(target=work, args=(i, lock, parse_list[i + 6:i + 9:3], ret_list))
+        # 加锁，并行处理
         p.daemon = True
         pro_list.append(p)
         p.start()
@@ -286,3 +288,7 @@ if __name__ == "__main__":
         p.join()
         # 多进程等待结束
     print "ALL END"
+    center_list = temp_list
+    for road in ret_list:
+        center_list.append(road)
+    save_model('./road/new_center.txt', center_list)

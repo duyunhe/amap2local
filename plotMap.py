@@ -155,6 +155,7 @@ def main_show1():
     data = load_model(filename)
     for road in data:
         pl = road['polyline']
+        name = road['name']
         # rid = road['rid']
         xy_items = pl.split(';')
         x_list, y_list = [], []
