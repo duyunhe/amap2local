@@ -50,7 +50,7 @@ def get_all_main_roads(lng0, lat0, lng1, lat1):
 
 def process_traffic_status(road_name):
     req = 'https://restapi.amap.com/v3/traffic/status/road?name={1}&city=杭州市' \
-               '&key={0}&extensions=base'.format(jt_key, road_name)
+               '&key={0}&extensions=all'.format(jt_key, road_name)
     try:
         f = urllib2.urlopen(req)
         response = f.read()
@@ -72,11 +72,11 @@ def process_traffic_status(road_name):
             road_data = {'orientation': ort, 'name': name, 'polyline': polyline,
                          'lcodes': lcode}
             x.append(road_data)
-
+        return x
     except Exception as e:
         print road_name
         print e.message
-    return x
+    return None
 
 
 def process_json(url_json, fp):
@@ -199,10 +199,27 @@ def main():
     fp.write('\n')
     fp.close()
 
-# main()
+
+def main1():
+    raw_data = []
+    road_list = ['建国北路']
+
+    fp = open('./road/raw.txt', 'w')
+    for road_name in road_list:
+        res = process_traffic_status(road_name)
+        if res is not None:
+            raw_data.extend(res)
+    js = json.dumps(raw_data, ensure_ascii=False).encode('utf-8')
+    fp.write(js)
+    fp.write('\n')
+    fp.close()
 
 
 def get():
+    """
+    获取整个杭州内的道路
+    :return: 
+    """
     l1, b1 = 120.376929, 30.362365
     l0, b0 = 120.046824, 30.09851
     dl, db = 120.095039 - 120.058991, 30.348718 - 30.309158
@@ -221,5 +238,5 @@ def get():
         print x
 
 
-main()
+# main1()
 

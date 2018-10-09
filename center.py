@@ -4,15 +4,24 @@
 # @简介    : 中心线的处理
 # @File    : center.py
 
+"""
+*******************中心线提取算法*******************************
+center 将merge完的路线整理成为center中心线
+center0 将center两端点尽可能落到道路上
+center1 将中心线按照道路切成一小段
+center2 处理那些来回弯曲的道路
+***************************************************************
+"""
+
 import math
 
 import numpy as np
 
 from geo import line2grid, \
     get_cross_point, is_segment_cross, point2segment2, calc_include_angle2, \
-    get_dist, get_segment_length, cut_from_segment
+    get_dist, get_segment_length, cut_from_segment, calc_dist
 from map_struct import Road, Point
-from refineMap import load_model, save_model, xylist2polyline, dog_last, \
+from refineMap import load_model, save_model, xylist2polyline, dog_last, polyline2xylist, \
     polyline2path, coord2xy, get_diff, load_model2road, save_road2model
 
 
@@ -40,6 +49,57 @@ def center():
         center_line = {'name': name, 'polyline': polyline}
         road_center_list.append(center_line)
     save_model('./road/center.txt', road_center_list)
+
+
+def center2():
+    """
+    修正南山路这种曲折道路
+    :return: 
+    """
+    road_data = load_model('./road/center.txt')
+    exist_road = {u'科海路', u'富袁线', u'蜀山路', u'塘湄线', u'所前北路', u'八柯线', u'萧明线',
+                  u'红十五线', u'江东大道', u'庆春路隧道', u'浣纱路', u'白马湖路'}
+    merge_data = load_model('./road/merge_xy.txt')
+    merge_dict = {}
+    for road in merge_data:
+        name = road['name']
+        polyline = road['polyline']
+        xy_list = polyline2xylist(polyline)
+        if name not in merge_dict:
+            merge_dict[name] = xy_list[-1]
+    new_road_data = []
+    for road in road_data:
+        polyline = road['polyline']
+        name = road['name']
+        if name in exist_road:
+            print name
+            continue
+        exist_road.add(name)
+        xy_list = polyline2xylist(polyline)
+        new_xy_list = []
+
+        # 先找出最接近的那个点
+        try:
+            last_xy = merge_dict[name]
+        except KeyError:
+            continue
+        # last_xy = xy_list[0]
+        # new_xy_list.append(last_xy)
+        # del xy_list[0]
+        len_list = len(xy_list)
+        for i in range(len_list):
+            min_dist, sel = 1e10, -1
+            for j, xy in enumerate(xy_list):
+                dist = calc_dist(last_xy, xy)
+                if dist < min_dist:
+                    min_dist, sel = dist, j
+            last_xy = xy_list[sel]
+            new_xy_list.append(last_xy)
+            del xy_list[sel]
+        new_xy_list = reversed(new_xy_list)
+        road['polyline'] = xylist2polyline(new_xy_list)
+        new_road_data.append(road)
+    save_model('./road/nanshan.txt', new_road_data)
 
 
 def grid_center_line(road_name, road_list):
@@ -73,7 +133,7 @@ def grid_center_line(road_name, road_list):
     scan_by_x = k < 1   # 沿着X轴或Y轴扫描
 
     line_xy = []
-    for road_info in road_list:
+    for j, road_info in enumerate(road_list):
         pll = road_info['polyline']
         coord_list = polyline2path(pll)
         seg_list = []
@@ -110,7 +170,7 @@ def grid_center_line(road_name, road_list):
             for y in np.arange(y_list[0], y_list[-1] + 1, 0.5):
                 calc_cnt += 1
                 diff, dist = get_diff(road_xy_data[0], road_xy_data[1], [x, y])
-                if diff < 0.1:
+                if diff < 0.5:
                     try:
                         last_diff, last_dist, _ = x_coord[x]
                     except KeyError:
@@ -136,7 +196,7 @@ def grid_center_line(road_name, road_list):
             for x in np.arange(x_list[0], x_list[-1] + 1, 0.5):
                 calc_cnt += 1
                 diff, dist = get_diff(road_xy_data[0], road_xy_data[1], [x, y])
-                if diff < 0.1:
+                if diff < 0.5:
                     try:
                         last_diff, last_dist, _ = y_coord[y]
                     except KeyError:
@@ -155,16 +215,6 @@ def grid_center_line(road_name, road_list):
 
     plot_xy = dog_last(plot_xy)
     return plot_xy
-    # new_xy0, new_xy1 = [], []
-    # last_seg = None
-    # for i, seg in enumerate(plot_xy):
-    #     if i > 0:
-    #         nseg0, nseg1 = get_parallel(last_seg, seg, 20)
-    #         new_xy0.append(nseg0)
-    #         new_xy1.append(nseg1)
-    #     last_seg = seg
-
-    # main_show2(plot_xy, new_xy0, new_xy1)
 
 
 def center_offset(road0, road1):
@@ -314,7 +364,7 @@ def center_simplify(road):
     return r
 
 
-def center3():
+def center1():
     """
     中心线最后分隔
     :return:
@@ -379,8 +429,8 @@ def center0():
         for j, road1 in enumerate(center_road):
             if i != j:
                 center_offset(road0, road1)
-    # save_road2model('./road/center0.txt', center_road)
-    # return
+    save_road2model('./road/center0.txt', center_road)
+    return
 
     # 重新计算交叉点
     for road in center_road:

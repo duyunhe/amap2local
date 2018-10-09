@@ -8,9 +8,9 @@ import json
 import math
 
 from DBConn import oracle_util
-from geo import bl2xy, xy2bl, calc_dist, point2segment, get_cross_point, is_segment_cross, get_parallel, point2segment2, \
-    calc_include_angle2, \
-    cut_x, cut_y
+from geo import bl2xy, xy2bl, calc_dist, point2segment, get_cross_point, \
+    is_segment_cross, get_parallel, point2segment2, \
+    calc_include_angle2, cut_x, cut_y
 from map_struct import Road, Point, Segment
 
 
@@ -41,7 +41,10 @@ def load_model2road(filename):
     road_list = []
     for i, road_info in enumerate(data):
         name, point_list = road_info['name'], polyline2pt_list(road_info['polyline'])
-        cross_list = road_info['cross']
+        try:
+            cross_list = road_info['cross']
+        except KeyError:
+            cross_list = []
         # Road
         road = Road(name, 0, i)
         road.set_point_list(point_list)
@@ -892,6 +895,4 @@ def trans():
         road['polyline'] = strxy.decode('utf-8')
     save_model('./road/merge_xy.txt', road_list)
 
-
-# merge()
 

@@ -102,7 +102,7 @@ def main_show():
     """
     fig1 = plt.figure(figsize=(12, 6))
     ax = fig1.add_subplot(111)
-    filename = './road/par1.txt'
+    filename = './road/merge_xy.txt'
     data = load_model(filename)
     for road in data:
         pl = road['polyline']
@@ -118,26 +118,40 @@ def main_show():
 
         plt.plot(x_list, y_list, marker='o', linestyle='-', color='darkorange',
                  markersize=2)
-        plt.plot([x_list[0]], [y_list[0]], marker='o', markersize=3, color='r', linestyle='')
-        plt.plot([x_list[-1]], [y_list[-1]], marker='o', markersize=3, color='g', linestyle='')
+        # plt.plot([x_list[0]], [y_list[0]], marker='o', markersize=3, color='r', linestyle='')
+        # plt.plot([x_list[-1]], [y_list[-1]], marker='o', markersize=3, color='g', linestyle='')
         try:
             rid = road['rid']
             plt.text((x_list[0] + x_list[-1]) / 2, (y_list[0] + y_list[-1]) / 2, str(rid))
         except KeyError:
             pass
 
+    filename = './road/center.txt'
+    data = load_model(filename)
+    for road in data:
+        pl = road['polyline']
+        xy_items = pl.split(';')
+        x_list, y_list = [], []
+        for i, xy in enumerate(xy_items):
+            x, y = map(float, xy.split(',')[0:2])
+            # x, y = bl2xy(lat, lng)
+            x_list.append(x)
+            y_list.append(y)
+            # if road['rid'] == 19:
+            #     plt.text(x + 5, y + 5, str(i))
+
+        plt.plot(x_list, y_list, marker='o', linestyle='-', color='b',
+                 markersize=2)
+        # plt.plot([x_list[0]], [y_list[0]], marker='o', markersize=3, color='r', linestyle='')
+        # plt.plot([x_list[-1]], [y_list[-1]], marker='o', markersize=3, color='g', linestyle='')
         try:
-            xy_list = []
-            cross = road['cross']
-            for pt in cross:
-                xy_list.append([pt['px'], pt['py']])
-            # plot_path(xy_list, 'b')
+            rid = road['rid']
+            plt.text((x_list[0] + x_list[-1]) / 2, (y_list[0] + y_list[-1]) / 2, str(rid))
         except KeyError:
             pass
-        plt.plot(x_list, y_list)
 
-    plt.xlim(75550, 78948)
-    plt.ylim(83080, 84958)
+    # plt.xlim(75550, 78948)
+    # plt.ylim(83080, 84958)
     plt.subplots_adjust(left=0.06, right=0.98, bottom=0.05, top=0.96)
     # plt.savefig("road.png", dpi=200)
     plt.show()
@@ -151,7 +165,7 @@ def main_show1():
     fig1 = plt.figure(figsize=(12, 6))
     ax = fig1.add_subplot(111)
 
-    filename = './road/merge.txt'
+    filename = './road/center.txt'
     data = load_model(filename)
     for road in data:
         pl = road['polyline']
@@ -164,18 +178,10 @@ def main_show1():
             # x, y = bl2xy(lat, lng)
             x_list.append(x)
             y_list.append(y)
+            plt.text(x, y, str(i))
         # plt.plot(x_list, y_list, color='darkblue')
         plt.plot(x_list, y_list, marker='', markersize=2, color='darkblue', linewidth=1)
-        # plt.text(x_list[0], y_list[0], str(rid))
-
-        # if rid == 1:
-        #     try:
-        #         entrance = road['entrance'](entrance, 'r')
-        #         plot_path
-        #         ext = road['exit']
-        #         plot_path(ext, 'g')
-        #     except KeyError:
-        #         pass
+        plt.text((x_list[0] + x_list[-1]) / 2, (y_list[0] + y_list[-1]) / 2, name)
 
     # plt.xlim(75550, 78948)
     # plt.ylim(83080, 84958)
@@ -184,4 +190,4 @@ def main_show1():
     plt.show()
 
 
-main_show1()
+main_show()

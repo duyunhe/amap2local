@@ -307,8 +307,8 @@ if __name__ == "__main__":
     ret_list = manager.list()
     # for road in temp_list:
     #     ret_list.append(road)
-    for i in range(12):
-        p = multiprocessing.Process(target=work, args=(i, lock, parse_list[i::12], ret_list))
+    for i in range(16):
+        p = multiprocessing.Process(target=work, args=(i, lock, parse_list[i::16], ret_list))
         # 加锁，并行处理
         p.daemon = True
         pro_list.append(p)
