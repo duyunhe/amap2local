@@ -42,3 +42,6 @@
  center.py的center函数，初步提取中心线center.txt
 
  center0,center1两个函数，处理中心线
+
+ par.py中 par函数生成平行线
+ par0,par1等函数将路口间的线擦除

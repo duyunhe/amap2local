@@ -15,6 +15,11 @@ from map_struct import Road, Point, Segment
 
 
 def save_model(filename, road_data):
+    """
+    :param filename: string 
+    :param road_data: list of road
+    :return: 
+    """
     js = json.dumps(road_data, ensure_ascii=False).encode('utf-8')
     fp = open(filename, 'w')
     fp.write(js)
@@ -25,13 +30,20 @@ def save_model(filename, road_data):
 def save_road2model(filename, road_list):
     network = []
     for road in road_list:
-        road_info = {'name': road.name, 'rid': road.rid,
-                     'polyline': point_list2polyline(road.point_list)}
-        cross_list = []
-        for pt in road.cross_list:
-            if pt.cross == 1:
-                cross_list.append({'px': pt.px, 'py': pt.py, 'name': pt.cross_name})
-        road_info['cross'] = cross_list
+        try:
+            road_info = {'name': road.name, 'rid': road.rid,
+                         'polyline': point_list2polyline(road.point_list)}
+        except ValueError:
+            print road.name, 'Value Error'
+        try:
+            cross_list = []
+            for pt in road.cross_list:
+                if pt.cross == 1:
+                    cross_list.append({'px': round(pt.px, 6), 'py': round(pt.py, 6),
+                                       'cross_name': pt.cross_name})
+            road_info['cross'] = cross_list
+        except AttributeError:
+            print road.name, 'Attr Error'
         network.append(road_info)
     save_model(filename, network)
 

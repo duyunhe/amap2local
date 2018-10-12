@@ -45,6 +45,13 @@ def load_model(filename):
     fp.close()
     return data
 
+
+def plot_road_name(xlist, ylist, road_name):
+    list_len = len(xlist)
+    name_len = len(road_name)
+    if name_len < list_len:
+        flag = 0
+
 # main()
 # main_show()
 
@@ -102,53 +109,30 @@ def main_show():
     """
     fig1 = plt.figure(figsize=(12, 6))
     ax = fig1.add_subplot(111)
-    filename = './road/merge_xy.txt'
+
+    filename = './road/center0.txt'
     data = load_model(filename)
     for road in data:
         pl = road['polyline']
+        name = road['name']
         xy_items = pl.split(';')
         x_list, y_list = [], []
         for i, xy in enumerate(xy_items):
             x, y = map(float, xy.split(',')[0:2])
-            # x, y = bl2xy(lat, lng)
             x_list.append(x)
             y_list.append(y)
-            # if road['rid'] == 19:
-            #     plt.text(x + 5, y + 5, str(i))
-
-        plt.plot(x_list, y_list, marker='o', linestyle='-', color='darkorange',
-                 markersize=2)
-        # plt.plot([x_list[0]], [y_list[0]], marker='o', markersize=3, color='r', linestyle='')
-        # plt.plot([x_list[-1]], [y_list[-1]], marker='o', markersize=3, color='g', linestyle='')
-        try:
-            rid = road['rid']
-            plt.text((x_list[0] + x_list[-1]) / 2, (y_list[0] + y_list[-1]) / 2, str(rid))
-        except KeyError:
-            pass
-
-    filename = './road/center.txt'
-    data = load_model(filename)
-    for road in data:
-        pl = road['polyline']
-        xy_items = pl.split(';')
+            # plt.text(x, y, str(i))
+        plt.plot(x_list, y_list, marker='', markersize=2, linewidth=1)
+        rid = int(road['rid'])
+        if True:
+            plt.text((x_list[0] + x_list[-1]) / 2, (y_list[0] + y_list[-1]) / 2, name)
+        plot_road_name(x_list, y_list, name)
+        cross_list = road['cross']
         x_list, y_list = [], []
-        for i, xy in enumerate(xy_items):
-            x, y = map(float, xy.split(',')[0:2])
-            # x, y = bl2xy(lat, lng)
-            x_list.append(x)
-            y_list.append(y)
-            # if road['rid'] == 19:
-            #     plt.text(x + 5, y + 5, str(i))
-
-        plt.plot(x_list, y_list, marker='o', linestyle='-', color='b',
-                 markersize=2)
-        # plt.plot([x_list[0]], [y_list[0]], marker='o', markersize=3, color='r', linestyle='')
-        # plt.plot([x_list[-1]], [y_list[-1]], marker='o', markersize=3, color='g', linestyle='')
-        try:
-            rid = road['rid']
-            plt.text((x_list[0] + x_list[-1]) / 2, (y_list[0] + y_list[-1]) / 2, str(rid))
-        except KeyError:
-            pass
+        for cross in cross_list:
+            x_list.append(cross['px'])
+            y_list.append(cross['py'])
+        plt.plot(x_list, y_list, marker='s', markersize=4, linestyle='')
 
     # plt.xlim(75550, 78948)
     # plt.ylim(83080, 84958)
@@ -165,23 +149,23 @@ def main_show1():
     fig1 = plt.figure(figsize=(12, 6))
     ax = fig1.add_subplot(111)
 
-    filename = './road/center.txt'
+    filename = './road/center0.txt'
     data = load_model(filename)
     for road in data:
         pl = road['polyline']
         name = road['name']
-        # rid = road['rid']
         xy_items = pl.split(';')
         x_list, y_list = [], []
         for i, xy in enumerate(xy_items):
             x, y = map(float, xy.split(',')[0:2])
-            # x, y = bl2xy(lat, lng)
             x_list.append(x)
             y_list.append(y)
-            plt.text(x, y, str(i))
-        # plt.plot(x_list, y_list, color='darkblue')
-        plt.plot(x_list, y_list, marker='', markersize=2, color='darkblue', linewidth=1)
-        plt.text((x_list[0] + x_list[-1]) / 2, (y_list[0] + y_list[-1]) / 2, name)
+            # plt.text(x, y, str(i))
+        plt.plot(x_list, y_list, marker='', markersize=2, linewidth=1)
+        rid = int(road['rid'])
+        if True:
+            plt.text((x_list[0] + x_list[-1]) / 2, (y_list[0] + y_list[-1]) / 2, name)
+        plot_road_name(x_list, y_list, name)
 
     # plt.xlim(75550, 78948)
     # plt.ylim(83080, 84958)

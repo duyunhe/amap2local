@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2018/9/21
-# @Author  : Clark Du
+# @Author  : yhdu@tongwoo.cn
 # @简介    : 中心线的处理
 # @File    : center.py
 
 """
 *******************中心线提取算法*******************************
-center 将merge完的路线整理成为center中心线
+center  将merge完的路线整理成为center中心线
 center0 将center两端点尽可能落到道路上
 center1 将中心线按照道路切成一小段
 center2 处理那些来回弯曲的道路
@@ -23,6 +23,88 @@ from geo import line2grid, \
 from map_struct import Road, Point
 from refineMap import load_model, save_model, xylist2polyline, dog_last, polyline2xylist, \
     polyline2path, coord2xy, get_diff, load_model2road, save_road2model
+
+
+def center_3():
+    """
+    针对潮王路和文晖路    
+    :return: 
+    """
+    road_data = load_model('./road/merge.txt')
+    road_dict = {}
+    for road_info in road_data:
+        name = road_info['name']
+        try:
+            road_dict[name].append(road_info)
+        except KeyError:
+            road_dict[name] = [road_info]
+
+    # 中间截取
+    for name, road_list in road_dict.iteritems():
+        road0, road1 = road_list[0:2]
+        bp, ep = road1[0], road1[-1]
+        sel = -1
+        for i, pt in enumerate(road0):
+            if i == 0 or i == len(road0) - 1:
+                continue
+            if pt[0] == bp[0] and pt[1] == bp[1] or pt[0] == ep[0] and pt[1] == ep[1]:
+                sel = i
+                break
+        if sel != -1:
+            new_road0 = road0[0:sel + 1]
+            new_road1 = road0[sel:]
+
+    road_center_list = []
+    for name, road_list in road_dict.iteritems():
+        if name != u'潮王路' and name != u'文晖路':
+            continue
+        xy_list = grid_center_line(name, road_list)
+        polyline = xylist2polyline(xy_list)
+        center_line = {'name': name, 'polyline': polyline}
+        road_center_list.append(center_line)
+    save_model('./road/center.txt', road_center_list)
+
+
+def center_one_merge(road0, road1):
+    """
+    单向连接道路
+    :param road0: 待延长的道路
+    :param road1: 目标道路
+    :return: 
+    """
+    r0_bp, r0_ep = road0.point_list[0], road0.point_list[-1]
+    r1_bp, r1_ep = road1.point_list[0], road1.point_list[-1]
+    if get_dist(r0_ep, r1_bp) < 200:
+        road0.add_point(r1_bp)
+        road0.gene_segment()
+    elif get_dist(r0_ep, r1_ep) < 200:
+        road0.add_point(r1_ep)
+        road0.gene_segment()
+    elif get_dist(r0_bp, r1_bp) < 200:
+        new_point_list = [r1_bp]
+        for pt in road0.point_list:
+            new_point_list.append(pt)
+        road0.set_point_list(new_point_list)
+        road0.gene_segment()
+    elif get_dist(r0_bp, r1_ep) < 200:
+        new_point_list = [r1_ep]
+        for pt in road0.point_list:
+            new_point_list.append(pt)
+        road0.set_point_list(new_point_list)
+        road0.gene_segment()
+
+
+def center_4():
+    road_data = load_model2road('./road/center0.txt')
+    link = {u'留祥路': u'石祥路', u'石祥路': u'留石快速路', u'留石快速路': u'石大快速路',
+            u'艮山西路': u'艮山东路', u'滨安路': u'金城路', u'秋石快速路': u'秋涛北路', u'绍兴路': u'登云路'}
+    for road0 in road_data:
+        for road1 in road_data:
+            name0, name1 = road0.name, road1.name
+            if name0 in link.keys() and name1 == link[name0]:
+                print name0, name1
+                center_one_merge(road0, road1)
+    save_road2model('./road/center4.txt', road_data)
 
 
 def center():
@@ -51,14 +133,16 @@ def center():
     save_model('./road/center.txt', road_center_list)
 
 
-def center2():
+def center_2():
     """
-    修正南山路这种曲折道路
+    修正曲折道路
+    最后再去除重复点
     :return: 
     """
-    road_data = load_model('./road/center.txt')
+    road_data = load_model('./road/new_center.txt')
     exist_road = {u'科海路', u'富袁线', u'蜀山路', u'塘湄线', u'所前北路', u'八柯线', u'萧明线',
-                  u'红十五线', u'江东大道', u'庆春路隧道', u'浣纱路', u'白马湖路'}
+                  u'红十五线', u'江东大道', u'庆春路隧道', u'白马湖路', u'德胜快速路', u'中河南路',
+                  u'哑巴弄'}
     merge_data = load_model('./road/merge_xy.txt')
     merge_dict = {}
     for road in merge_data:
@@ -72,7 +156,7 @@ def center2():
         polyline = road['polyline']
         name = road['name']
         if name in exist_road:
-            print name
+            print name, 'existed'
             continue
         exist_road.add(name)
         xy_list = polyline2xylist(polyline)
@@ -97,9 +181,20 @@ def center2():
             new_xy_list.append(last_xy)
             del xy_list[sel]
         new_xy_list = reversed(new_xy_list)
+        # 去重
+        temp_list = []
+        last_xy = [0, 0]
+        for x, y in new_xy_list:
+            if x == last_xy[0] and y == last_xy[1]:
+                print 'duplicated', name
+                continue
+            temp_list.append([x, y])
+            last_xy = [x, y]
+        new_xy_list = temp_list
         road['polyline'] = xylist2polyline(new_xy_list)
         new_road_data.append(road)
-    save_model('./road/nanshan.txt', new_road_data)
+
+    save_model('./road/center.txt', new_road_data)
 
 
 def grid_center_line(road_name, road_list):
@@ -234,7 +329,7 @@ def center_offset(road0, road1):
                 pos = pt.cross_other_seg + 1
             else:
                 pos = 0
-            pt_list = [pt]
+            pt_list = [Point(pt.px, pt.py)]
             pt_list.extend(road0.point_list[pos:])
             road0.set_point_list(pt_list)
             road0.gene_segment()
@@ -249,7 +344,7 @@ def center_offset(road0, road1):
             else:
                 pos = len(road0.point_list)
             pt_list = road0.point_list[:pos]
-            pt_list.append(pt)
+            pt_list.append(Point(pt.px, pt.py))
             road0.set_point_list(pt_list)
             road0.gene_segment()
             # print road0.name, "end point fix to ", road1.name, pt.px, pt.py
@@ -364,12 +459,12 @@ def center_simplify(road):
     return r
 
 
-def center1():
+def center2():
     """
     中心线最后分隔
     :return:
     """
-    center_road = load_model2road('./road/center0.txt')
+    center_road = load_model2road('./road/center1.txt')
     new_center_road = center_road[:]
     center_road = []
     for road in new_center_road:
@@ -380,7 +475,7 @@ def center1():
     # rid
     for i, road in enumerate(new_center_road):
         road.set_rid(i)
-    save_road2model('./road/center1.txt', new_center_road)
+    save_road2model('./road/center2.txt', new_center_road)
 
 
 def center_insert_cross(road):
@@ -398,9 +493,40 @@ def center_insert_cross(road):
     road.gene_segment()
 
 
+def center1():
+    """
+    分隔开中心线
+    """
+    center_road = load_model2road('./road/center0.txt')
+    # 重新计算交叉点
+    for road in center_road:
+        road.cross_list = []
+    for i, road0 in enumerate(center_road):
+        for j, road1 in enumerate(center_road):
+            if i < j:
+                center_divide(road0, road1)
+    print "divide 2"
+
+    # cross list
+    # for road in center_road:
+    #     center_insert_cross(road)
+
+    save_road2model('./road/center1.txt', center_road)
+    return
+
+    new_center_road = []
+    for road in center_road:
+        new_center_road.extend(center_split(road))
+
+    for i, road in enumerate(new_center_road):
+        road.set_rid(i)
+
+    save_road2model('./road/center1.txt', new_center_road)
+
+
 def center0():
     """
-    中心线的优化
+    中心线的优化，切分
     :return:
     """
     center_road = load_model2road('./road/center.txt')
@@ -416,32 +542,30 @@ def center0():
             if i != j:
                 center_cross(road0, road1)
 
+    for road in center_road:
+        center_dup(road)
     for i, road0 in enumerate(center_road):
         for j, road1 in enumerate(center_road):
             if j < i:
                 center_divide(road0, road1)
     print "divide 1"
-    # save_road2model('./road/center0.txt', center_road)
-    # return
+
+    save_road2model('./road/center0.txt', center_road)
 
     # 端点落到道路
     for i, road0 in enumerate(center_road):
         for j, road1 in enumerate(center_road):
             if i != j:
                 center_offset(road0, road1)
-    save_road2model('./road/center0.txt', center_road)
-    return
 
-    # 重新计算交叉点
     for road in center_road:
         road.cross_list = []
     for i, road0 in enumerate(center_road):
         for j, road1 in enumerate(center_road):
-            if j < i:
+            if i < j:
                 center_divide(road0, road1)
     print "divide 2"
 
-    # cross list
     for road in center_road:
         center_insert_cross(road)
 
@@ -452,7 +576,24 @@ def center0():
     for i, road in enumerate(new_center_road):
         road.set_rid(i)
 
-    save_road2model('./road/center0.txt', new_center_road)
+    save_road2model('./road/center1.txt', new_center_road)
+
+
+def center_dup(road):
+    """
+    道路去重（一般在道路增加点后）
+    :param road: Road
+    :return: 
+    """
+    last_pt = Point(0, 0)
+    new_pt_list = []
+    for pt in road.point_list:
+        if pt == last_pt:
+            continue
+        new_pt_list.append(pt)
+        last_pt = pt
+    road.point_list = new_pt_list
+    road.gene_segment()
 
 
 def center_cross(road0, road1):
@@ -533,4 +674,4 @@ def center_merge(road0, road1):
         road0.es, road1.bs = 1, 1
 
 
-center()
+center0()

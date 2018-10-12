@@ -202,7 +202,7 @@ def main():
 
 def main1():
     raw_data = []
-    road_list = ['建国北路']
+    road_list = ['香积寺路']
 
     fp = open('./road/raw.txt', 'w')
     for road_name in road_list:

@@ -321,7 +321,7 @@ def get_cross_point(segment0, segment1):
     a1, b1, c1 = get_line_equation(sp0, sp1)
 
     d = a0 * b1 - a1 * b0
-    if d == 0:          # 平行
+    if math.fabs(d) < 1e-10:          # 平行
         return d, None, None
     else:
         px = (b0 * c1 - b1 * c0) / d

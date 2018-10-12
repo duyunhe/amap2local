@@ -181,7 +181,7 @@ def grid_center_line(global_lock, road_name, road_list):
             for y in np.arange(y_list[0], y_list[-1] + 1, 0.5):
                 calc_cnt += 1
                 diff, dist = get_diff(road_xy_data[0], road_xy_data[1], [x, y])
-                if diff < 0.1:
+                if diff < 0.5:
                     try:
                         last_diff, last_dist, _ = x_coord[x]
                     except KeyError:
@@ -208,7 +208,7 @@ def grid_center_line(global_lock, road_name, road_list):
             for x in np.arange(x_list[0], x_list[-1] + 1, 0.5):
                 calc_cnt += 1
                 diff, dist = get_diff(road_xy_data[0], road_xy_data[1], [x, y])
-                if diff < 0.1:
+                if diff < 0.5:
                     try:
                         last_diff, last_dist, _ = y_coord[y]
                     except KeyError:

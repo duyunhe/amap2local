@@ -12,14 +12,12 @@ from refineMap import save_model, load_model2road, save_road2model, \
 
 
 def par():
-    PAR = 40
-    road_data = load_model2road('./road/center1.txt')
+    PAR = 10
+    road_data = load_model2road('./road/center01.txt')
     par_road = []
     road_index = 0
-    for road in road_data:
+    for i, road in enumerate(road_data):
         name, point_list = road.name, road.point_list
-        if road.name == u'文二路':
-            point_list = list(reversed(road.point_list))
         last_pt = None
         road0, road1 = Road(name, 0, road_index), Road(name, 0, road_index + 1)
         road_index += 2
@@ -34,23 +32,30 @@ def par():
             last_pt = pt
         # 计算线段之间的交点
         last_seg = None
-        for seg in seg_list0:
+        for j, seg in enumerate(seg_list0):
             if last_seg is None:
                 road0.add_point(seg.begin_point)
             else:
                 _, px, py = get_cross_point(last_seg, seg)
-                cp = Point(px, py)
-                road0.add_point(cp)
+                if px is None:      # 平行
+                    road0.add_point(seg.begin_point)
+                else:
+                    cp = Point(px, py)
+                    road0.add_point(cp)
             last_seg = seg
         road0.add_point(last_seg.end_point)
+
         last_seg = None
         for seg in reversed(seg_list1):
             if last_seg is None:
                 road1.add_point(seg.begin_point)
             else:
                 _, px, py = get_cross_point(last_seg, seg)
-                cp = Point(px, py)
-                road1.add_point(cp)
+                if px is None:      # 平行
+                    road1.add_point(seg.begin_point)
+                else:
+                    cp = Point(px, py)
+                    road1.add_point(cp)
             last_seg = seg
         road1.add_point(last_seg.end_point)
         # 并生成线段
@@ -66,20 +71,22 @@ def par():
             if i < j:
                 par_merge(road0, road1)
 
+    for road in par_road:
+        par_check(road)
+
     road_list = []
     # Road list
     for road in par_road:
-        # path_list = road.get_path_without_crossing()
-        # for path in path_list:
-        #     road_info = {'name': road.name, 'path': point_list2polyline(path),
-        #                  'rid': road.rid}
-        #     road_list.append(road_info)
         cross_list = []
-        road_info = {'name': road.name, 'polyline': point_list2polyline(road.get_path()),
-                     'rid': road.rid, 'cross': point_list2polyline(cross_list)}
-        road_list.append(road_info)
+        try:
+            road_info = {'name': road.name, 'polyline': point_list2polyline(road.point_list),
+                         'rid': road.rid, 'cross': point_list2polyline(cross_list)}
+            road_list.append(road_info)
+        except ValueError:
+            print road.name
+            pass
 
-    save_model('./road/parallel.txt', road_list)
+    save_model('./road/par.txt', road_list)
 
 
 def par_merge(road0, road1):
@@ -91,7 +98,11 @@ def par_merge(road0, road1):
     """
     THREAD = 10
     bp0, ep0, bp1, ep1 = road0.point_list[0], road0.point_list[-1], road1.point_list[0], road1.point_list[-1]
-    if bp0 == ep1 or bp1 == ep0:
+    try:
+        if bp0 == ep1 or bp1 == ep0:
+            return
+    except TypeError:
+        print 'par merge', road0.rid, road1.rid, 'TypeError'
         return
     # 在生成平行线后两条道路之间必然（除非是一直线上）有空隙或者交叉
     # 这个THREAD值不能太大，否则和对向车道也能查找到一起
@@ -270,7 +281,7 @@ def par0():
     组成可以使用的路网
     :return:
     """
-    road_data = load_model2road('./road/parallel.txt')
+    road_data = load_model2road('./road/par.txt')
     for i, road0 in enumerate(road_data):
         for j, road1 in enumerate(road_data):
             if i < j:
@@ -327,9 +338,26 @@ def par_check(road):
     for i, pt in enumerate(road.point_list):
         for j, pt0 in enumerate(road.point_list):
             if i < j:
-                if pt == pt0:
-                    print road.rid, "error"
+                try:
+                    if pt == pt0:
+                        print road.rid, "error"
+                        return
+                except TypeError:
+                    print road.rid, road.name, 'check type error'
                     return
+    last_pt = None
+    sel = -1
+    for i, pt in enumerate(road.point_list):
+        if last_pt is not None:
+            dist = get_dist(last_pt, pt)
+            if dist > 3000:
+                print road.rid, road.name, 'dist', dist, i
+                sel = i
+                break
+        last_pt = pt
+    if sel != -1:
+        del(road.point_list[sel])
+    flag = 0
 
 
 def par_cut(road):
@@ -432,4 +460,4 @@ def par1():
     save_road2model('./road/par1.txt', road_data)
 
 
-par1()
+par()
