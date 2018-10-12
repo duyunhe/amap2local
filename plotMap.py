@@ -110,7 +110,7 @@ def main_show():
     fig1 = plt.figure(figsize=(12, 6))
     ax = fig1.add_subplot(111)
 
-    filename = './road/center0.txt'
+    filename = './road/center1.txt'
     data = load_model(filename)
     for road in data:
         pl = road['polyline']

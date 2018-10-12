@@ -357,8 +357,10 @@ def center_divide(road0, road1):
         return
     for i, seg0 in enumerate(road0.seg_list):
         for j, seg1 in enumerate(road1.seg_list):
-            if is_segment_cross(seg0, seg1):
+            if calc_include_angle2(seg0, seg1) < 0.5 and is_segment_cross(seg0, seg1):
                 _, px, py = get_cross_point(seg0, seg1)
+                if px is None:
+                    print 'None'
                 cr0 = Point(px, py)
                 cr0.cross, cr0.cross_name, cr0.cross_other_seg = 1, road1.name, j
                 cr0.cross_seg = i
@@ -550,13 +552,13 @@ def center0():
                 center_divide(road0, road1)
     print "divide 1"
 
-    save_road2model('./road/center0.txt', center_road)
-
     # 端点落到道路
     for i, road0 in enumerate(center_road):
         for j, road1 in enumerate(center_road):
             if i != j:
                 center_offset(road0, road1)
+    save_road2model('./road/center0.txt', center_road)
+    # 为防止精度不必要的损失，在一个程序内完成
 
     for road in center_road:
         road.cross_list = []
