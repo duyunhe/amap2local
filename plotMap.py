@@ -110,23 +110,30 @@ def main_show():
     fig1 = plt.figure(figsize=(12, 6))
     ax = fig1.add_subplot(111)
 
-    filename = './road/center1.txt'
+    filename = './road/par0.txt'
     data = load_model(filename)
     for road in data:
         pl = road['polyline']
         name = road['name']
+        rid = int(road['rid'])
         xy_items = pl.split(';')
         x_list, y_list = [], []
         for i, xy in enumerate(xy_items):
-            x, y = map(float, xy.split(',')[0:2])
-            x_list.append(x)
-            y_list.append(y)
-            # plt.text(x, y, str(i))
+            try:
+                x, y = map(float, xy.split(',')[0:2])
+                x_list.append(x)
+                y_list.append(y)
+            except ValueError:
+                print road.name
+            if rid == 1115:
+                plt.text(x, y, str(i))
         plt.plot(x_list, y_list, marker='', markersize=2, linewidth=1)
-        rid = int(road['rid'])
-        if True:
-            plt.text((x_list[0] + x_list[-1]) / 2, (y_list[0] + y_list[-1]) / 2, name)
-        plot_road_name(x_list, y_list, name)
+
+        if False:
+            plt.text((x_list[0] + x_list[-1]) / 2, (y_list[0] + y_list[-1]) / 2, name + ',' + str(rid))
+        # plot_road_name(x_list, y_list, name)
+        if name != u'':
+            continue
         cross_list = road['cross']
         x_list, y_list = [], []
         for cross in cross_list:
@@ -149,7 +156,7 @@ def main_show1():
     fig1 = plt.figure(figsize=(12, 6))
     ax = fig1.add_subplot(111)
 
-    filename = './road/center0.txt'
+    filename = './road/par0.txt'
     data = load_model(filename)
     for road in data:
         pl = road['polyline']

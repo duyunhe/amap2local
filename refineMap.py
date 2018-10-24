@@ -8,10 +8,40 @@ import json
 import math
 
 from DBConn import oracle_util
-from geo import bl2xy, xy2bl, calc_dist, point2segment, get_cross_point, \
-    is_segment_cross, get_parallel, point2segment2, \
+from geo import bl2xy, xy2bl, calc_dist, point2segment, get_cross_point, is_segment_cross, get_parallel, point2segment2, \
     calc_include_angle2, cut_x, cut_y
 from map_struct import Road, Point, Segment
+
+
+def grid(x, y):
+    """
+    用于网格化
+    :param x: 平面坐标 
+    :param y: 
+    :return: 
+    """
+    minx, maxx, miny, maxy = 60000, 100000, 60000, 100000
+    if x < minx:
+        x = minx
+    elif x > maxx:
+        x = maxx
+    if y < miny:
+        y = miny
+    elif y > maxy:
+        y = maxy
+    ix, iy = int((x - minx) / 5000), int((y - miny) / 5000)
+    idx = ix * 8 + iy
+    return idx
+
+
+def road_near(road0, road1):
+    """
+    用网格辅助判断道路是否可能相交
+    :param road0: Road
+    :param road1: Road
+    :return: True 在同一个网格内 False 反之
+    """
+    return len(road0.grid_set & road1.grid_set) > 0
 
 
 def save_model(filename, road_data):
@@ -36,6 +66,10 @@ def save_road2model(filename, road_list):
         except ValueError:
             print road.name, 'Value Error'
         try:
+            road_info['grid'] = list(road.grid_set)
+        except TypeError:       # empty
+            pass
+        try:
             cross_list = []
             for pt in road.cross_list:
                 if pt.cross == 1:
@@ -43,6 +77,7 @@ def save_road2model(filename, road_list):
                                        'cross_name': pt.cross_name})
             road_info['cross'] = cross_list
         except AttributeError:
+            road_info['cross'] = []
             print road.name, 'Attr Error'
         network.append(road_info)
     save_model(filename, network)
@@ -54,11 +89,18 @@ def load_model2road(filename):
     for i, road_info in enumerate(data):
         name, point_list = road_info['name'], polyline2pt_list(road_info['polyline'])
         try:
-            cross_list = road_info['cross']
+            cross_list = []
         except KeyError:
             cross_list = []
+        try:
+            grid_set = set(road_info['grid'])
+        except KeyError:
+            grid_set = None
         # Road
         road = Road(name, 0, i)
+        # mark = road_info['mark']
+        # road.set_mark(mark)
+        road.set_grid_set(grid_set)
         road.set_point_list(point_list)
         road.set_cross_list(cross_list)
         road.gene_segment()
@@ -478,17 +520,17 @@ def update_road():
 
 
 def save_db():
-    road_data = load_model('../road/10_offset/par1.txt')
+    road_data = load_model('../road/10_offset/par0.txt')
     conn = oracle_util.get_connection()
     cursor = conn.cursor()
     for road in road_data:
         name, path, road_index = road['name'], polyline2path(road['polyline']), road['rid']
-        # sql = "insert into tb_road_state (rid, road_name, direction, road_" \
-        #       "level, road_desc, def_speed) values (:1, :2, :3, :4, :5, :6)"
-        # tup = (road_index, name, 0, 1, 0, 0)
-        # cursor.execute(sql, tup)
-        sql = "insert into tb_road_point_on_map(rid, seq, longitude, " \
-              "latitude, map_level) values(:1, :2, :3, :4, 2)"
+        sql = "insert into tb_road_state (rid, road_name, direction, road_" \
+              "level, road_desc, def_speed) values (:1, :2, :3, :4, :5, :6)"
+        tup = (road_index, name, 0, 1, 0, 0)
+        cursor.execute(sql, tup)
+        sql = "insert into tb_road_point(rid, seq, longitude, " \
+              "latitude, map_level) values(:1, :2, :3, :4, 1)"
         tup_list = []
         for i, pt in enumerate(path):
             px, py = map(float, pt.split(',')[0:2])
@@ -908,3 +950,4 @@ def trans():
     save_model('./road/merge_xy.txt', road_list)
 
 
+save_db()

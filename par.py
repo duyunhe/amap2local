@@ -8,18 +8,41 @@ from geo import get_cross_point, is_segment_cross, get_parallel, point2segment2,
     get_dist
 from map_struct import Road, Point, Segment
 from refineMap import save_model, load_model2road, save_road2model, \
-    point_list2polyline
+    point_list2polyline, grid, road_near
+
+
+def save_par(filename, par_road):
+    """
+    :param filename: string 存放的文件
+    :param par_road: list of Road(struct) 生成的道路列表
+    :return: 
+    """
+    road_list = []
+    # Road list
+    for road in par_road:
+        cross_list = []
+        try:
+            road_info = {'name': road.name, 'polyline': point_list2polyline(road.point_list), 'rid': road.rid,
+                         'cross': point_list2polyline(cross_list)}
+            road_list.append(road_info)
+        except ValueError:
+            print road.name
+            pass
+
+    save_model(filename, road_list)
 
 
 def par():
     PAR = 10
-    road_data = load_model2road('./road/center01.txt')
+    road_data = load_model2road('./road/center1.txt')
     par_road = []
     road_index = 0
     for i, road in enumerate(road_data):
         name, point_list = road.name, road.point_list
         last_pt = None
         road0, road1 = Road(name, 0, road_index), Road(name, 0, road_index + 1)
+        road0.set_grid_set(road.grid_set)
+        road1.set_grid_set(road.grid_set)
         road_index += 2
         seg_list0, seg_list1 = [], []
         for pt in point_list:
@@ -65,28 +88,19 @@ def par():
         par_road.append(road0)
         par_road.append(road1)
 
+    # for test
+    save_par('./road/par_0.txt', par_road)
+
     # 端点处有merge的可能
     for i, road0 in enumerate(par_road):
         for j, road1 in enumerate(par_road):
-            if i < j:
+            if i < j and road_near(road0, road1):
                 par_merge(road0, road1)
 
     for road in par_road:
         par_check(road)
 
-    road_list = []
-    # Road list
-    for road in par_road:
-        cross_list = []
-        try:
-            road_info = {'name': road.name, 'polyline': point_list2polyline(road.point_list),
-                         'rid': road.rid, 'cross': point_list2polyline(cross_list)}
-            road_list.append(road_info)
-        except ValueError:
-            print road.name
-            pass
-
-    save_model('./road/par.txt', road_list)
+    save_par('./road/par.txt', par_road)
 
 
 def par_merge(road0, road1):
@@ -205,7 +219,7 @@ def par_offset(road0, road1):
     :param road1: Road 待偏移到的（垂直）道路
     :return:
     """
-    OFFSET = 100
+    OFFSET = 40
     # 当端点接近某道路且该道路没有路口交点时，需要偏移该端点，延长至下一个道路
     # 端点必须没有和其他线段相交
     bp, ep = road0.point_list[0], road0.point_list[-1]
@@ -264,19 +278,28 @@ def par_offset(road0, road1):
 
 def par_insert_cross(road):
     pt_list = []
+    # split
     for i, pt in enumerate(road.point_list):
         pt_list.append(pt)
         last_cr = None
+        insert_list = []
         for j, cr in enumerate(road.cross_list):
+            # 相同的线段内可能有几个cross点
             if cr.cross_seg == i:
                 if last_cr is None or get_dist(cr, last_cr) > 1e-5:
-                    pt_list.append(cr)
+                    # pt_list.append(cr)
+                    # 排序后再插入
+                    dist = get_dist(pt, cr)
+                    insert_list.append((dist, cr))
                 last_cr = cr
-    road.point_list = pt_list
+        for d, cr in sorted(insert_list):
+            pt_list.append(cr)
+    road.set_point_list(pt_list)
+    road.gene_segment()
 
 
 def par0():
-    """
+    """ 
     对平行线的优化，
     组成可以使用的路网
     :return:
@@ -284,14 +307,16 @@ def par0():
     road_data = load_model2road('./road/par.txt')
     for i, road0 in enumerate(road_data):
         for j, road1 in enumerate(road_data):
-            if i < j:
+            if i < j and road_near(road0, road1):
                 par_divide(road0, road1)
+    print "par_divide 0"
     # 偏移终点起点的路口
     for i, road0 in enumerate(road_data):
         for j, road1 in enumerate(road_data):
-            if road0.name == road1.name:
+            if road0.name == road1.name or not road_near(road0, road1):
                 continue
             par_offset(road0, road1)
+    print "par offset"
 
     for road in road_data:
         par_simplify(road)
@@ -303,7 +328,7 @@ def par0():
         for j, road1 in enumerate(road_data):
             if road0.name == road1.name:
                 continue
-            if i < j:
+            if i < j and road_near(road0, road1):
                 par_divide(road0, road1)
 
     for road in road_data:
@@ -350,7 +375,7 @@ def par_check(road):
     for i, pt in enumerate(road.point_list):
         if last_pt is not None:
             dist = get_dist(last_pt, pt)
-            if dist > 3000:
+            if dist > 2000:
                 print road.rid, road.name, 'dist', dist, i
                 sel = i
                 break
@@ -451,7 +476,7 @@ def par1():
 
     for i, road0 in enumerate(road_data):
         for j, road1 in enumerate(road_data):
-            if i < j and road0.name != road1.name:
+            if i < j and road0.name != road1.name and road_near(road0, road1):
                 par_cross(road0, road1)
 
     # 切掉路口那段
@@ -460,4 +485,20 @@ def par1():
     save_road2model('./road/par1.txt', road_data)
 
 
-par()
+def par_mark():
+    road_data = load_model2road('./road/par.txt')
+    # minx, maxx, miny, maxy = 1e10, 0, 1e10, 0
+    for road in road_data:
+        xylist = road.point_list
+        grid_set = set()
+        for pt in xylist:
+            try:
+                grid_set.add(grid(pt.px, pt.py))
+            except ValueError:
+                print road.name
+        road.set_grid_set(grid_set)
+
+    save_road2model('./road/par.txt', road_data)
+
+
+par0()

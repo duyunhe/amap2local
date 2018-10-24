@@ -88,7 +88,7 @@ def calc_include_angle2(seg0, seg1):
 
 
 def moid(x):
-    ZERO = 1e-4
+    ZERO = 1e-3
     if x < -ZERO:
         return -1
     elif x > ZERO:

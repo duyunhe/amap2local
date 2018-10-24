@@ -87,9 +87,17 @@ class Road:
         self.rid = rid
         self.cross_list = []
         self.es, self.bs = 0, 0         # end connected to other, begin connected to other
+        self.mark = 0
+        self.grid_set = None
 
     def set_rid(self, rid):
         self.rid = rid
+
+    def set_grid_set(self, gs):
+        self.grid_set = gs
+
+    def set_mark(self, mark):
+        self.mark = mark
 
     def add_point(self, point):
         self.point_list.append(point)
