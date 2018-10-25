@@ -8,7 +8,7 @@ from geo import get_cross_point, is_segment_cross, get_parallel, point2segment2,
     get_dist
 from map_struct import Road, Point, Segment
 from refineMap import save_model, load_model2road, save_road2model, \
-    point_list2polyline, grid, road_near
+    point_list2polyline, grid, road_near, dog_last
 
 
 def save_par(filename, par_road):
@@ -89,7 +89,7 @@ def par():
         par_road.append(road1)
 
     # for test
-    save_par('./road/par_0.txt', par_road)
+    # save_par('./road/par_0.txt', par_road)
 
     # 端点处有merge的可能
     for i, road0 in enumerate(par_road):
@@ -347,6 +347,7 @@ def par0():
 def par_simplify(road):
     last_pt = None
     pt_list = []
+    # 先除去重复点
     for pt in road.point_list:
         if last_pt is not None:
             dist = get_dist(last_pt, pt)
@@ -355,7 +356,16 @@ def par_simplify(road):
         else:
             pt_list.append(pt)
         last_pt = pt
-    road.point_list = pt_list
+    pts = road.point_list
+    # 然后用doglas简化算法
+    xy_list = []
+    for pt in pts:
+        xy_list.append([pt.px, pt.py])
+    xy_list = dog_last(xy_list)
+    road.point_list = []
+    for xy in xy_list:
+        pt = Point(xy[0], xy[1])
+        road.add_point(pt)
     road.gene_segment()
 
 
@@ -485,18 +495,40 @@ def par1():
     save_road2model('./road/par1.txt', road_data)
 
 
+def extend_grid(grid_set):
+    """
+    扩展集合至九个格子
+    :param grid_set: 
+    :return: 
+    """
+    ns = set()
+    for n in grid_set:
+        x, y = n / 40, n % 40
+        for i in range(-1, 2):
+            for j in range(-1, 2):
+                nx, ny = x + i, y + j
+                if nx < 0:
+                    nx = 0
+                if nx >= 40:
+                    nx = 40
+                if ny < 0:
+                    ny = 0
+                if ny >= 40:
+                    ny = 40
+                ns.add(nx * 40 + ny)
+    return ns
+
+
 def par_mark():
     road_data = load_model2road('./road/par.txt')
     # minx, maxx, miny, maxy = 1e10, 0, 1e10, 0
     for road in road_data:
+        par_simplify(road)
         xylist = road.point_list
         grid_set = set()
         for pt in xylist:
-            try:
-                grid_set.add(grid(pt.px, pt.py))
-            except ValueError:
-                print road.name
-        road.set_grid_set(grid_set)
+            grid_set.add(grid(pt.px, pt.py))
+        road.set_grid_set(extend_grid(grid_set))
 
     save_road2model('./road/par.txt', road_data)
 

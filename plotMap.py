@@ -116,6 +116,8 @@ def main_show():
         pl = road['polyline']
         name = road['name']
         rid = int(road['rid'])
+        grid = road['grid']
+
         xy_items = pl.split(';')
         x_list, y_list = [], []
         for i, xy in enumerate(xy_items):
@@ -125,12 +127,13 @@ def main_show():
                 y_list.append(y)
             except ValueError:
                 print road.name
-            if rid == 1115:
+            if rid == 113:
                 plt.text(x, y, str(i))
         plt.plot(x_list, y_list, marker='', markersize=2, linewidth=1)
 
-        if False:
-            plt.text((x_list[0] + x_list[-1]) / 2, (y_list[0] + y_list[-1]) / 2, name + ',' + str(rid))
+        if name == u'打石漾路':
+            plt.text((x_list[0] + x_list[-1]) / 2, (y_list[0] + y_list[-1]) / 2, name + ',' + str(rid) +
+                    ',[' + str(grid[0]) + ']')
         # plot_road_name(x_list, y_list, name)
         if name != u'':
             continue
@@ -156,7 +159,7 @@ def main_show1():
     fig1 = plt.figure(figsize=(12, 6))
     ax = fig1.add_subplot(111)
 
-    filename = './road/par0.txt'
+    filename = './road/center1.txt'
     data = load_model(filename)
     for road in data:
         pl = road['polyline']

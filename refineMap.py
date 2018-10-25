@@ -29,8 +29,8 @@ def grid(x, y):
         y = miny
     elif y > maxy:
         y = maxy
-    ix, iy = int((x - minx) / 5000), int((y - miny) / 5000)
-    idx = ix * 8 + iy
+    ix, iy = int((x - minx) / 1000), int((y - miny) / 1000)
+    idx = ix * 40 + iy
     return idx
 
 
@@ -69,18 +69,51 @@ def save_road2model(filename, road_list):
             road_info['grid'] = list(road.grid_set)
         except TypeError:       # empty
             pass
-        try:
-            cross_list = []
-            for pt in road.cross_list:
-                if pt.cross == 1:
-                    cross_list.append({'px': round(pt.px, 6), 'py': round(pt.py, 6),
-                                       'cross_name': pt.cross_name})
-            road_info['cross'] = cross_list
-        except AttributeError:
-            road_info['cross'] = []
-            print road.name, 'Attr Error'
+        # try:
+        #     cross_list = []
+        #     for pt in road.cross_list:
+        #         if pt.cross == 1:
+        #             cross_list.append({'px': round(pt.px, 6), 'py': round(pt.py, 6),
+        #                                'cross_name': pt.cross_name})
+        #     road_info['cross'] = cross_list
+        # except AttributeError:
+        #     road_info['cross'] = []
+        #     print road.name, 'Attr Error'
         network.append(road_info)
     save_model(filename, network)
+
+
+def load_model2road_by_grid(filename, grid_num):
+    """
+    调试用
+    :param filename: 
+    :param grid_num: 格子index
+    :return: 在格子内经过的所有道路
+    """
+    data = load_model(filename)
+    road_list = []
+    for i, road_info in enumerate(data):
+        name, point_list = road_info['name'], polyline2pt_list(road_info['polyline'])
+        try:
+            cross_list = []
+        except KeyError:
+            cross_list = []
+        try:
+            grid_set = set(road_info['grid'])
+        except KeyError:
+            grid_set = None
+        if grid_num not in grid_set:
+            continue
+        # Road
+        road = Road(name, 0, i)
+        # mark = road_info['mark']
+        # road.set_mark(mark)
+        road.set_grid_set(grid_set)
+        road.set_point_list(point_list)
+        road.set_cross_list(cross_list)
+        road.gene_segment()
+        road_list.append(road)
+    return road_list
 
 
 def load_model2road(filename):
@@ -136,7 +169,7 @@ def xylist2polyline(xy_list):
 
 
 def point_list2polyline(point_list):
-    str_list = ["{0:.6f},{1:.6f}".format(point.px, point.py) for point in point_list]
+    str_list = ["{0:.2f},{1:.2f}".format(point.px, point.py) for point in point_list]
     return ';'.join(str_list)
 
 
@@ -520,6 +553,7 @@ def update_road():
 
 
 def save_db():
+    # 原型
     road_data = load_model('../road/10_offset/par0.txt')
     conn = oracle_util.get_connection()
     cursor = conn.cursor()
@@ -530,6 +564,25 @@ def save_db():
         tup = (road_index, name, 0, 1, 0, 0)
         cursor.execute(sql, tup)
         sql = "insert into tb_road_point(rid, seq, longitude, " \
+              "latitude, map_level) values(:1, :2, :3, :4, 1)"
+        tup_list = []
+        for i, pt in enumerate(path):
+            px, py = map(float, pt.split(',')[0:2])
+            lat, lng = xy2bl(px, py)
+            tup = (road_index, i, lng, lat)
+            tup_list.append(tup)
+        cursor.executemany(sql, tup_list)
+        road_index += 1
+    conn.commit()
+    # 宽的道路
+    road_data = load_model('../road/40_offset/par1.txt')
+    for road in road_data:
+        name, path, road_index = road['name'], polyline2path(road['polyline']), road['rid']
+        # sql = "insert into tb_road_state  (rid, road_name, direction, road_" \
+        #       "level, road_desc, def_speed) values (:1, :2, :3, :4, :5, :6)"
+        # tup = (road_index, name, 0, 1, 0, 0)
+        # cursor.execute(sql, tup)
+        sql = "insert into tb_road_point_on_map(rid, seq, longitude, " \
               "latitude, map_level) values(:1, :2, :3, :4, 1)"
         tup_list = []
         for i, pt in enumerate(path):
