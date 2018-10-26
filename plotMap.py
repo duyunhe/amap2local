@@ -110,7 +110,7 @@ def main_show():
     fig1 = plt.figure(figsize=(12, 6))
     ax = fig1.add_subplot(111)
 
-    filename = './road/par0.txt'
+    filename = './road/par1.txt'
     data = load_model(filename)
     for road in data:
         pl = road['polyline']
@@ -126,14 +126,17 @@ def main_show():
                 x_list.append(x)
                 y_list.append(y)
             except ValueError:
-                print road.name
-            if rid == 113:
-                plt.text(x, y, str(i))
+                print name
+            # if rid == 924:
+            #     plt.text(x, y, str(i))
         plt.plot(x_list, y_list, marker='', markersize=2, linewidth=1)
 
-        if name == u'打石漾路':
-            plt.text((x_list[0] + x_list[-1]) / 2, (y_list[0] + y_list[-1]) / 2, name + ',' + str(rid) +
-                    ',[' + str(grid[0]) + ']')
+        if name == u'曙光路' or name == u'黄龙路':
+            try:
+                plt.text((x_list[0] + x_list[-1]) / 2, (y_list[0] + y_list[-1]) / 2, name + ',' + str(rid) +
+                        ',[' + str(grid[0]) + ']')
+            except IndexError:
+                pass
         # plot_road_name(x_list, y_list, name)
         if name != u'':
             continue
@@ -159,7 +162,7 @@ def main_show1():
     fig1 = plt.figure(figsize=(12, 6))
     ax = fig1.add_subplot(111)
 
-    filename = './road/center1.txt'
+    filename = './road/par.txt'
     data = load_model(filename)
     for road in data:
         pl = road['polyline']
@@ -167,14 +170,17 @@ def main_show1():
         xy_items = pl.split(';')
         x_list, y_list = [], []
         for i, xy in enumerate(xy_items):
-            x, y = map(float, xy.split(',')[0:2])
-            x_list.append(x)
-            y_list.append(y)
+            try:
+                x, y = map(float, xy.split(',')[0:2])
+                x_list.append(x)
+                y_list.append(y)
+            except ValueError:
+                print name
             # plt.text(x, y, str(i))
-        plt.plot(x_list, y_list, marker='', markersize=2, linewidth=1)
+        plt.plot(x_list, y_list, marker='', markersize=2, color='b', linewidth=1)
         rid = int(road['rid'])
-        if True:
-            plt.text((x_list[0] + x_list[-1]) / 2, (y_list[0] + y_list[-1]) / 2, name)
+        # if True:
+        #     plt.text((x_list[0] + x_list[-1]) / 2, (y_list[0] + y_list[-1]) / 2, name)
         plot_road_name(x_list, y_list, name)
 
     # plt.xlim(75550, 78948)
