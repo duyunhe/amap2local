@@ -12,8 +12,8 @@ import numpy as np
 conn = cx_Oracle.connect('hz/hz@192.168.11.88/orcl')
 cursor = conn.cursor()
 tup_list = []
-for i in range(5432):
-    sql = "select t.*, s.road_name from TB_ROAD_SPEED_PRE1 t, " \
+for i in range(190):
+    sql = "select t.*, s.road_name from TB_ROAD_SPEED_PRE t, " \
           "tb_road_state s where t.rid = s.rid and t.rid = {0}".format(i)
     cursor.execute(sql)
     speed_list = []
@@ -32,10 +32,10 @@ for i in range(5432):
         upper_cnt = np.sum(list(map(lambda x: x > upper_bound, speed_list)))
         # radio = max(speed_list) / min(speed_list)
         print i, len(speed_list), std, lower_cnt, upper_cnt, upper_bound, per75
-        tup_list.append((min(70, per75), i))
+        tup_list.append((i, min(80, per75)))
     except IndexError:
         pass
-sql = "update tb_road_def_speed set speed = :1 where rid = :2"
+sql = "insert into tb_road_def_speed values(:1, :2, 0)"
 cursor.executemany(sql, tup_list)
 conn.commit()
 cursor.close()

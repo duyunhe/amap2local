@@ -236,12 +236,7 @@ def center_2():
     for road in road_data:
         polyline = road['polyline']
         name = road['name']
-        rid = int(road['rid'])
-        if rid in mod_road:
-            print name, rid, 'modified'
-        else:
-            new_road_data.append(road)
-            continue
+        # rid = int(road['rid'])
         xy_list = polyline2xylist(polyline)
         new_xy_list = []
 
@@ -428,10 +423,11 @@ def center_offset(road0, road1):
     :return:
     """
     # 当端点接近某路口时，需要偏移该端点，修正为路口
+    OFFSET_DIST = 1000
     bp, ep = road0.point_list[0], road0.point_list[-1]
     for pt in road1.cross_list:
         dist = get_dist(pt, bp)
-        if 1e-5 < dist < 20:
+        if 1e-5 < dist < OFFSET_DIST:
             pt.cross = 0
             if pt.cross_name == road0.name:  # 说明与road0相交
                 pos = pt.cross_other_seg + 1
@@ -445,7 +441,7 @@ def center_offset(road0, road1):
 
     for pt in road1.cross_list:
         dist = get_dist(pt, ep)
-        if 1e-5 < dist < 20:
+        if 1e-5 < dist < OFFSET_DIST:
             pt.cross = 0
             if pt.cross_name == road0.name:  # 说明与road0相交
                 pos = pt.cross_other_seg + 1
@@ -513,7 +509,7 @@ def center_split3(road):
     :param road: Road
     :return: road list
     """
-    THREAD = 350
+    THREAD = 2500
     road_seg_list = []
     temp = []
     dist = 0
@@ -533,7 +529,7 @@ def center_split3(road):
     dist0 = 0
     for seg in temp:
         dist0 += get_segment_length(seg)
-    if dist0 < 150 and len(road_seg_list) > 0:
+    if dist0 < 1000 and len(road_seg_list) > 0:
         road_seg_list[-1].extend(temp)
     else:
         road_seg_list.append(temp)
@@ -622,7 +618,7 @@ def center1():
     for i, road in enumerate(new_center_road):
         road.set_rid(i)
 
-    save_road2model('./road/center1.txt', new_center_road)
+    save_road2model('./road/center_1.txt', new_center_road)
 
 
 def center0():
@@ -756,20 +752,21 @@ def center_merge(road0, road1):
     检查端点是否重合
     :return:
     """
+    MERGE_DIST = 1000
     r0s0, r0s1 = road0.seg_list[0], road0.seg_list[-1]
     r1s0, r1s1 = road1.seg_list[0], road1.seg_list[-1]
     r0_bp, r0_ep = road0.point_list[0], road0.point_list[-1]
     r1_bp, r1_ep = road1.point_list[0], road1.point_list[-1]
-    if get_dist(r0_bp, r1_ep) < 50 and calc_include_angle2(r0s0, r1s1) > 0.8:
+    if get_dist(r0_bp, r1_ep) < MERGE_DIST and calc_include_angle2(r0s0, r1s1) > 0.8:
         # 头尾相接，并且平行，说明是在同一条道路里面
         road1.add_point(r0_bp)
         road1.gene_segment()
         road1.es, road0.bs = 1, 1
-    elif get_dist(r1_bp, r0_ep) < 50 and calc_include_angle2(r1s0, r0s1) > 0.8:
+    elif get_dist(r1_bp, r0_ep) < MERGE_DIST and calc_include_angle2(r1s0, r0s1) > 0.8:
         road0.add_point(r1_bp)
         road0.gene_segment()
         road0.es, road1.bs = 1, 1
-    elif get_dist(r0_bp, r1_bp) < 50 and calc_include_angle2(r0s0, r1s0) > 0.8:
+    elif get_dist(r0_bp, r1_bp) < MERGE_DIST and calc_include_angle2(r0s0, r1s0) > 0.8:
         # 有时遇到单芯线
         new_point_list = [r1_bp]
         for pt in road0.point_list:
@@ -777,7 +774,7 @@ def center_merge(road0, road1):
         road0.set_point_list(new_point_list)
         road0.gene_segment()
         road0.bs, road1.es = 1, 1
-    elif get_dist(r0_ep, r1_ep) < 50 and calc_include_angle2(r0s1, r1s1) > 0.8:
+    elif get_dist(r0_ep, r1_ep) < MERGE_DIST and calc_include_angle2(r0s1, r1s1) > 0.8:
         road0.add_point(r1_ep)
         road0.gene_segment()
         road0.es, road1.bs = 1, 1
@@ -791,7 +788,6 @@ def center_mark():
         grid_set = set()
         for pt in xylist:
             grid_set.add(grid(pt.px, pt.py))
-        a = len(grid_set)
         road.set_grid_set(grid_set)
     save_road2model('./road/center1.txt', road_data)
 
@@ -808,4 +804,21 @@ def check():
     save_road2model('./road/center1.txt', road_data)
 
 
+def main_road(road):
+    road_list = [u'中河高架', u'上塘高架', u'秋石快速路', u'留石快速路',
+                 u'艮山东路', u'艮山西路', u'秋涛路', u'秋涛北路', u'石大快速路',
+                 u'德胜路', u'德胜东路', u'德胜中路', u'文一路', u'文一西路', u'天目山路',
+                 u'环城北路']
+    return road in road_list
 
+
+def fetch():
+    road_data1 = load_model2road('./road/center.txt')
+    road_data = load_model2road('./road_2/center.txt')
+    for road in road_data:
+        if main_road(road.name):
+            road_data1.append(road)
+    save_road2model('./road/center_.txt', road_data1)
+
+
+# center_mark()

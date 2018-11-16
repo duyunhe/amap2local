@@ -405,7 +405,7 @@ def build():
         ort = u"{0},{1}".format(last_road, "")
         pll = path2polyline(path)
         road_info = {'name': name, 'ort': ort, 'polyline': pll}
-        road_split_data.append(road_info)
+    road_split_data.append(road_info)
 
     js = json.dumps(road_split_data, ensure_ascii=False).encode('utf-8')
     fp = open('./road/split.txt', 'w')
@@ -554,31 +554,28 @@ def update_road():
 
 def save_db():
     # 原型
-    road_data = load_model('./road/10_offset/par0.txt')
+    road_data = load_model('./road/20_offset/par0.txt')
     conn = oracle_util.get_connection()
     cursor = conn.cursor()
     # for road in road_data:
     #     name, path, road_index = road['name'], polyline2path(road['polyline']), road['rid']
     #     sql = "insert into tb_road_state (rid, road_name, direction, road_" \
     #           "level, road_desc, def_speed) values (:1, :2, :3, :4, :5, :6)"
-    #     tup = (road_index, name, 0, 1, 0, 0)
+    #     tup = (road_index, name, 0, 0, 0, 0)
     #     cursor.execute(sql, tup)
     #     sql = "insert into tb_road_point(rid, seq, longitude, " \
-    #           "latitude) values(:1, :2, :3, :4)"
+    #           "latitude, road_level) values(:1, :2, :3, :4, :5)"
     #     tup_list = []
     #     for i, pt in enumerate(path):
     #         px, py = map(float, pt.split(',')[0:2])
     #         lat, lng = xy2bl(px, py)
-    #         tup = (road_index, i, lng, lat)
+    #         tup = (road_index, i, lng, lat, 0)
     #         tup_list.append(tup)
     #     cursor.executemany(sql, tup_list)
     #     road_index += 1
     # conn.commit()
     # 宽的道路
-    sql = "delete from tb_road_point_on_map"
-    cursor.execute(sql)
-    conn.commit()
-    road_data = load_model('./road/40_offset/par1.txt')
+    road_data = load_model('./road_2/40_offset/par1.txt')
     for road in road_data:
         name, path, road_index = road['name'], polyline2path(road['polyline']), road['rid']
         # sql = "insert into tb_road_state  (rid, road_name, direction, road_" \
@@ -597,7 +594,7 @@ def save_db():
             tup = (road_index, i, lng, lat)
             tup_list.append(tup)
         cursor.executemany(sql, tup_list)
-        road_index += 1
+        # road_index += 1
     conn.commit()
     cursor.close()
     conn.close()
@@ -1009,4 +1006,4 @@ def trans():
     save_model('./road/merge_xy.txt', road_list)
 
 
-save_db()
+# save_db()

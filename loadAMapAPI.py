@@ -26,7 +26,7 @@ def get_all_main_roads(lng0, lat0, lng1, lat1):
     :return: name set
     """
     req = 'https://restapi.amap.com/v3/traffic/status/rectangle?city=杭州市' \
-          '&key={0}&extensions=all&level=5&rectangle={1},{2};{3},{4}' \
+          '&key={0}&extensions=all&level=3&rectangle={1},{2};{3},{4}' \
           .format(jt_key, lng0, lat0, lng1, lat1)
 
     try:
@@ -238,5 +238,5 @@ def get():
         print x
 
 
-# main1()
+main()
 

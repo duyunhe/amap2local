@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2018/9/22
 # @Author  : Clark Du
-# @简介    : 平行线处理
-# @File    : par.py
+# @简介    : 100米平行线处理
+# @File    : par_100.py
 
 from geo import get_cross_point, is_segment_cross, get_parallel, point2segment2, calc_include_angle2, \
     get_dist
@@ -33,7 +33,7 @@ def save_par(filename, par_road):
 
 
 def par():
-    PAR = 20
+    PAR = 100
     road_data = load_model2road('./road/center1.txt')
     par_road = []
     road_index = 0
@@ -111,7 +111,7 @@ def par_merge(road0, road1):
     :param road1: 
     :return: road0, road1重新生成道路
     """
-    THREAD = 10
+    THREAD = 40
     bp0, ep0, bp1, ep1 = road0.point_list[0], road0.point_list[-1], road1.point_list[0], road1.point_list[-1]
     try:
         if bp0 == ep1 or bp1 == ep0:
@@ -216,15 +216,16 @@ def par_divide(road0, road1):
 def par_offset(road0, road1):
     """
     边缘点的起点或终点从路中央偏移到路上
-    :param road0: Road 目标道路
-    :param road1: Road 待偏移到的（垂直）道路
+    一定偏移到偶数序号的道路（中心线右手边）
+    :param road0: Road 待修正的道路道路
+    :param road1: Road 偏移到的（与road0垂直）道路
     :return:
     """
-    OFFSET = 40
-    # 当端点接近某道路且该道路没有路口交点时，需要偏移该端点，延长至下一个道路
-    # 端点必须没有和其他线段相交
+    OFFSET = 200
     if road1.rid & 1:
         return
+    # 当端点接近某道路且该道路没有路口交点时，需要偏移该端点，延长至下一个道路
+    # 端点必须没有和其他线段相交
     bp, ep = road0.point_list[0], road0.point_list[-1]
     # 首先是起点
     min_dist = 1e10
@@ -310,13 +311,13 @@ def par0():
     road_data = load_model2road('./road/par.txt')
     for i, road0 in enumerate(road_data):
         for j, road1 in enumerate(road_data):
-            if i < j and road_near(road0, road1):
+            if i < j:
                 par_divide(road0, road1)
     print "par_divide 0"
     # 偏移终点起点的路口
     for i, road0 in enumerate(road_data):
         for j, road1 in enumerate(road_data):
-            if road0.name == road1.name or not road_near(road0, road1):
+            if road0.name == road1.name:
                 continue
             par_offset(road0, road1)
     print "par offset"
@@ -331,14 +332,11 @@ def par0():
         for j, road1 in enumerate(road_data):
             if road0.name == road1.name:
                 continue
-            if i < j and road_near(road0, road1):
+            if i < j:
                 par_divide(road0, road1)
 
     for road in road_data:
         par_insert_cross(road)
-
-    for road in road_data:
-        par_simplify(road)
 
     for road in road_data:
         par_check(road)
@@ -433,6 +431,7 @@ def par_cross(road0, road1):
     :param road1: 
     :return: 
     """
+    rid0, rid1 = road0.rid, road1.rid
     rbp0, rep0, rbp1, rep1 = road0.point_list[0], road0.point_list[-1], road1.point_list[0], road1.point_list[-1]
     if rbp0 == rbp1 or rbp0 == rep1 or rep0 == rbp1 or rep0 == rep1:
         return

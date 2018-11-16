@@ -52,8 +52,21 @@ def plot_road_name(xlist, ylist, road_name):
     if name_len < list_len:
         flag = 0
 
-# main()
-# main_show()
+
+def main_road(road):
+    road_list = [u'中河高架', u'上塘高架', u'秋石快速路', u'留石快速路',
+                 u'艮山东路', u'艮山西路', u'秋涛路', u'秋涛北路', u'石大快速路',
+                 u'德胜路', u'德胜东路', u'德胜中路', u'文一路', u'文一西路']
+    return road in road_list
+
+
+def show_road(road_name):
+    fp = open('./road/show_name.txt')
+    road_list = []
+    for line in fp.readlines():
+        name = line.strip('\n')
+        road_list.append(name.decode('utf-8'))
+    return road_name in road_list
 
 
 def draw_seg(seg_list):
@@ -78,7 +91,7 @@ def main_show2(xy_list, seg_list0, seg_list1):
     """
     fig1 = plt.figure(figsize=(12, 6))
     ax = fig1.add_subplot(111)
-    filename = './road/merge.txt'
+    filename = './road/raw.txt'
     data = load_model(filename)
     for road in data:
         pl = road['polyline']
@@ -110,13 +123,15 @@ def main_show():
     fig1 = plt.figure(figsize=(12, 6))
     ax = fig1.add_subplot(111)
 
-    filename = './road/par1.txt'
+    filename = './road_2/40_offset/par1.txt'
     data = load_model(filename)
     for road in data:
         pl = road['polyline']
         name = road['name']
         rid = int(road['rid'])
         grid = road['grid']
+        # if not show_road(name):
+        #     continue
 
         xy_items = pl.split(';')
         x_list, y_list = [], []
@@ -131,10 +146,9 @@ def main_show():
             #     plt.text(x, y, str(i))
         plt.plot(x_list, y_list, marker='', markersize=2, linewidth=1)
 
-        if name == u'曙光路' or name == u'黄龙路':
+        if name == u'中河高架' or name == u'上塘高架':
             try:
-                plt.text((x_list[0] + x_list[-1]) / 2, (y_list[0] + y_list[-1]) / 2, name + ',' + str(rid) +
-                        ',[' + str(grid[0]) + ']')
+                plt.text((x_list[0] + x_list[-1]) / 2, (y_list[0] + y_list[-1]) / 2, str(rid))
             except IndexError:
                 pass
         # plot_road_name(x_list, y_list, name)
@@ -162,7 +176,7 @@ def main_show1():
     fig1 = plt.figure(figsize=(12, 6))
     ax = fig1.add_subplot(111)
 
-    filename = './road/par.txt'
+    filename = './road/par0.txt'
     data = load_model(filename)
     for road in data:
         pl = road['polyline']
@@ -177,11 +191,11 @@ def main_show1():
             except ValueError:
                 print name
             # plt.text(x, y, str(i))
-        plt.plot(x_list, y_list, marker='', markersize=2, color='b', linewidth=1)
+        plt.plot(x_list, y_list, marker='', markersize=2, linewidth=1)
         rid = int(road['rid'])
-        # if True:
-        #     plt.text((x_list[0] + x_list[-1]) / 2, (y_list[0] + y_list[-1]) / 2, name)
-        plot_road_name(x_list, y_list, name)
+        if True:
+            plt.text((x_list[0] + x_list[-1]) / 2, (y_list[0] + y_list[-1]) / 2, rid)
+        # plot_road_name(x_list, y_list, name)
 
     # plt.xlim(75550, 78948)
     # plt.ylim(83080, 84958)

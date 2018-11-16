@@ -82,8 +82,8 @@ class Road:
     """
     def __init__(self, name, ort, rid):
         self.name, self.ort = name, ort
-        self.seg_list = []
-        self.point_list = []
+        self.seg_list = []              # list of Segment
+        self.point_list = []            # list of Point
         self.rid = rid
         self.cross_list = []
         self.es, self.bs = 0, 0         # end connected to other, begin connected to other
