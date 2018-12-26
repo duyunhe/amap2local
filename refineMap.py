@@ -58,6 +58,12 @@ def save_model(filename, road_data):
 
 
 def save_road2model(filename, road_list):
+    """
+    :param filename: 
+    :param road_list: list of Road
+    注意：Road中的数据为unicode编码 即：value为str类型时，需转码为unicode类型
+    :return: 
+    """
     network = []
     for road in road_list:
         try:
@@ -69,16 +75,6 @@ def save_road2model(filename, road_list):
             road_info['grid'] = list(road.grid_set)
         except TypeError:       # empty
             pass
-        # try:
-        #     cross_list = []
-        #     for pt in road.cross_list:
-        #         if pt.cross == 1:
-        #             cross_list.append({'px': round(pt.px, 6), 'py': round(pt.py, 6),
-        #                                'cross_name': pt.cross_name})
-        #     road_info['cross'] = cross_list
-        # except AttributeError:
-        #     road_info['cross'] = []
-        #     print road.name, 'Attr Error'
         network.append(road_info)
     save_model(filename, network)
 
@@ -121,6 +117,7 @@ def load_model2road(filename):
     road_list = []
     for i, road_info in enumerate(data):
         name, point_list = road_info['name'], polyline2pt_list(road_info['polyline'])
+        rid = road_info['rid']
         try:
             cross_list = []
         except KeyError:
@@ -130,7 +127,7 @@ def load_model2road(filename):
         except KeyError:
             grid_set = None
         # Road
-        road = Road(name, 0, i)
+        road = Road(name, 0, rid)
         # mark = road_info['mark']
         # road.set_mark(mark)
         road.set_grid_set(grid_set)

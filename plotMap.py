@@ -176,7 +176,7 @@ def main_show1():
     fig1 = plt.figure(figsize=(12, 6))
     ax = fig1.add_subplot(111)
 
-    filename = './road/par0.txt'
+    filename = './road_test/par.txt'
     data = load_model(filename)
     for road in data:
         pl = road['polyline']
@@ -193,7 +193,7 @@ def main_show1():
             # plt.text(x, y, str(i))
         plt.plot(x_list, y_list, marker='', markersize=2, linewidth=1)
         rid = int(road['rid'])
-        if True:
+        if False:
             plt.text((x_list[0] + x_list[-1]) / 2, (y_list[0] + y_list[-1]) / 2, rid)
         # plot_road_name(x_list, y_list, name)
 
@@ -204,4 +204,4 @@ def main_show1():
     plt.show()
 
 
-main_show()
+main_show1()

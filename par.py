@@ -34,16 +34,17 @@ def save_par(filename, par_road):
 
 def par():
     PAR = 20
-    road_data = load_model2road('./road/center1.txt')
+    road_data = load_model2road('./road_new/center1.txt')
     par_road = []
-    road_index = 0
+    # road_index = 0
     for i, road in enumerate(road_data):
         name, point_list = road.name, road.point_list
+        rid = road.rid
         last_pt = None
-        road0, road1 = Road(name, 0, road_index), Road(name, 0, road_index + 1)
+        road0, road1 = Road(name, 0, rid * 2), Road(name, 0, rid * 2 + 1)
         road0.set_grid_set(road.grid_set)
         road1.set_grid_set(road.grid_set)
-        road_index += 2
+        # road_index += 2
         seg_list0, seg_list1 = [], []
         for pt in point_list:
             if last_pt is not None:
@@ -89,7 +90,8 @@ def par():
         par_road.append(road1)
 
     # for test
-    # save_par('./road/par_0.txt', par_road)
+    # save_par('./road_test/par_0.txt', par_road)
+    # return
 
     # 端点处有merge的可能
     for i, road0 in enumerate(par_road):
@@ -97,10 +99,7 @@ def par():
             if i < j and road_near(road0, road1):
                 par_merge(road0, road1)
 
-    for road in par_road:
-        par_check(road)
-
-    save_par('./road/par.txt', par_road)
+    save_par('./road_new/par.txt', par_road)
     par_mark()
 
 
@@ -307,11 +306,16 @@ def par0():
     组成可以使用的路网
     :return:
     """
-    road_data = load_model2road('./road/par.txt')
+    road_data = load_model2road('./road_new/par.txt')
+
     for i, road0 in enumerate(road_data):
         for j, road1 in enumerate(road_data):
             if i < j and road_near(road0, road1):
-                par_divide(road0, road1)
+                try:
+                    par_divide(road0, road1)
+                except ZeroDivisionError:
+                    print road0.rid, road1.rid
+
     print "par_divide 0"
     # 偏移终点起点的路口
     for i, road0 in enumerate(road_data):
@@ -343,7 +347,7 @@ def par0():
     for road in road_data:
         par_check(road)
 
-    save_road2model('./road/par0.txt', road_data)
+    save_road2model('./road_new/par0.txt', road_data)
     print "par0"
 
 
@@ -373,16 +377,15 @@ def par_simplify(road):
 
 
 def par_check(road):
+    last_pt = None
+    pt_list = []
     for i, pt in enumerate(road.point_list):
-        for j, pt0 in enumerate(road.point_list):
-            if i < j:
-                try:
-                    if pt == pt0:
-                        print road.rid, "error"
-                        return
-                except TypeError:
-                    print road.rid, road.name, 'check type error'
-                    return
+        if last_pt is not None and pt == last_pt:
+            last_pt = pt
+            continue
+        pt_list.append(pt)
+        last_pt = pt
+    road.point_list = pt_list
     last_pt = None
     sel = -1
     for i, pt in enumerate(road.point_list):
@@ -393,9 +396,8 @@ def par_check(road):
                 sel = i
                 break
         last_pt = pt
-    if sel != -1:
-        del(road.point_list[sel])
-    flag = 0
+    # if sel != -1:
+    #     del(road.point_list[sel])
 
 
 def par_cut(road):
@@ -523,17 +525,21 @@ def extend_grid(grid_set):
 
 
 def par_mark():
-    road_data = load_model2road('./road/par.txt')
+    road_data = load_model2road('./road_new/par.txt')
     # minx, maxx, miny, maxy = 1e10, 0, 1e10, 0
     for road in road_data:
-        par_simplify(road)
+        # par_simplify(road)
+        par_check(road)
         xylist = road.point_list
         grid_set = set()
-        for pt in xylist:
-            grid_set.add(grid(pt.px, pt.py))
-        road.set_grid_set(extend_grid(grid_set))
+        try:
+            for pt in xylist:
+                grid_set.add(grid(pt.px, pt.py))
+            road.set_grid_set(extend_grid(grid_set))
+        except ValueError:
+            print road.name
 
-    save_road2model('./road/par.txt', road_data)
+    save_road2model('./road_new/par.txt', road_data)
 
 
 par0()
