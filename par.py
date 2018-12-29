@@ -308,22 +308,22 @@ def par0():
     """
     road_data = load_model2road('./road_new/par.txt')
 
-    for i, road0 in enumerate(road_data):
-        for j, road1 in enumerate(road_data):
-            if i < j and road_near(road0, road1):
-                try:
-                    par_divide(road0, road1)
-                except ZeroDivisionError:
-                    print road0.rid, road1.rid
-
-    print "par_divide 0"
-    # 偏移终点起点的路口
-    for i, road0 in enumerate(road_data):
-        for j, road1 in enumerate(road_data):
-            if road0.name == road1.name or not road_near(road0, road1):
-                continue
-            par_offset(road0, road1)
-    print "par offset"
+    # for i, road0 in enumerate(road_data):
+    #     for j, road1 in enumerate(road_data):
+    #         if i < j and road_near(road0, road1):
+    #             try:
+    #                 par_divide(road0, road1)
+    #             except ZeroDivisionError:
+    #                 print road0.rid, road1.rid
+    #
+    # print "par_divide 0"
+    # # 偏移终点起点的路口
+    # for i, road0 in enumerate(road_data):
+    #     for j, road1 in enumerate(road_data):
+    #         if road0.name == road1.name or not road_near(road0, road1):
+    #             continue
+    #         par_offset(road0, road1)
+    # print "par offset"
 
     for road in road_data:
         par_simplify(road)
@@ -341,8 +341,8 @@ def par0():
     for road in road_data:
         par_insert_cross(road)
 
-    for road in road_data:
-        par_simplify(road)
+    # for road in road_data:
+    #     par_simplify(road)
 
     for road in road_data:
         par_check(road)
@@ -487,7 +487,7 @@ def par1():
     切路口
     :return:
     """
-    road_data = load_model2road('./road/par0.txt')
+    road_data = load_model2road('./road_new/par0.txt')
 
     for i, road0 in enumerate(road_data):
         for j, road1 in enumerate(road_data):
@@ -497,7 +497,7 @@ def par1():
     # 切掉路口那段
     for road in road_data:
         par_cut(road)
-    save_road2model('./road/par1.txt', road_data)
+    save_road2model('./road_new/par1.txt', road_data)
 
 
 def extend_grid(grid_set):
@@ -542,4 +542,4 @@ def par_mark():
     save_road2model('./road_new/par.txt', road_data)
 
 
-par0()
+par1()

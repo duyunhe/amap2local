@@ -33,17 +33,18 @@ def save_par(filename, par_road):
 
 
 def par():
-    PAR = 100
-    road_data = load_model2road('./road/center1.txt')
+    PAR = 120
+    road_data = load_model2road('./road_main/center1.txt')
     par_road = []
-    road_index = 0
+    # road_index = 0
     for i, road in enumerate(road_data):
         name, point_list = road.name, road.point_list
+        rid = road.rid
         last_pt = None
-        road0, road1 = Road(name, 0, road_index), Road(name, 0, road_index + 1)
+        road0, road1 = Road(name, 0, rid * 2), Road(name, 0, rid * 2 + 1)
         road0.set_grid_set(road.grid_set)
         road1.set_grid_set(road.grid_set)
-        road_index += 2
+        # road_index += 2
         seg_list0, seg_list1 = [], []
         for pt in point_list:
             if last_pt is not None:
@@ -97,11 +98,11 @@ def par():
             if i < j and road_near(road0, road1):
                 par_merge(road0, road1)
 
-    for road in par_road:
-        par_check(road)
+    # for road in par_road:
+    #     par_check(road)
 
-    save_par('./road/par.txt', par_road)
-    par_mark()
+    save_par('./road_main/par.txt', par_road)
+    # par_mark()
 
 
 def par_merge(road0, road1):
@@ -535,4 +536,4 @@ def par_mark():
     save_road2model('./road/par.txt', road_data)
 
 
-par0()
+par()

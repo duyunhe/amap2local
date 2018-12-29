@@ -781,7 +781,7 @@ def center_merge(road0, road1):
 
 
 def center_mark():
-    road_data = load_model2road('./road_new/center.txt')
+    road_data = load_model2road('./road_test/center.txt')
     # minx, maxx, miny, maxy = 1e10, 0, 1e10, 0
     for road in road_data:
         xylist = road.point_list
@@ -789,7 +789,7 @@ def center_mark():
         for pt in xylist:
             grid_set.add(grid(pt.px, pt.py))
         road.set_grid_set(grid_set)
-    save_road2model('./road_new/center1.txt', road_data)
+    save_road2model('./road_test/center1.txt', road_data)
 
 
 def process():
@@ -819,6 +819,15 @@ def fetch():
         if main_road(road.name):
             road_data1.append(road)
     save_road2model('./road/center_.txt', road_data1)
+
+
+def into_test():
+    road_data = load_model2road('./road_test/center1.txt')
+    test_data = []
+    for road in road_data:
+        if road.rid == 4635 or road.rid == 4638 or road.rid == 4636 or road.rid == 4632:
+            test_data.append(road)
+    save_road2model('./road_test/center1.txt', test_data)
 
 
 center_mark()

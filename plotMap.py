@@ -176,11 +176,13 @@ def main_show1():
     fig1 = plt.figure(figsize=(12, 6))
     ax = fig1.add_subplot(111)
 
-    filename = './road_test/par.txt'
+    filename = './road_main/par.txt'
     data = load_model(filename)
     for road in data:
         pl = road['polyline']
         name = road['name']
+        # if name != u'钱江三桥（西兴大桥）':
+        #     continue
         xy_items = pl.split(';')
         x_list, y_list = [], []
         for i, xy in enumerate(xy_items):
@@ -193,9 +195,10 @@ def main_show1():
             # plt.text(x, y, str(i))
         plt.plot(x_list, y_list, marker='', markersize=2, linewidth=1)
         rid = int(road['rid'])
-        if False:
+        if True:
+            # text = "{0},{1}".format(name, rid)
+            # plt.text(x_list[0], y_list[0], rid)
             plt.text((x_list[0] + x_list[-1]) / 2, (y_list[0] + y_list[-1]) / 2, rid)
-        # plot_road_name(x_list, y_list, name)
 
     # plt.xlim(75550, 78948)
     # plt.ylim(83080, 84958)
