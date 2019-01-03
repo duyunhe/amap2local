@@ -193,7 +193,7 @@ def point_project(point, segment_point0, segment_point1):
 
 def point2segment2(point, segment):
     """
-    计算点到线段距离(Point 版)
+    计算点到线段距离(Point 版) 
     :param point: Point
     :param segment: Segment
     :return: dist

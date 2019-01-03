@@ -33,8 +33,8 @@ def save_par(filename, par_road):
 
 
 def par():
-    PAR = 60
-    road_data = load_model2road('./road_main/center1.txt')
+    PAR = 40
+    road_data = load_model2road('./road_new/center1.txt')
     par_road = []
     # road_index = 0
     for i, road in enumerate(road_data):
@@ -101,7 +101,7 @@ def par():
     # for road in par_road:
     #     par_check(road)
 
-    save_par('./road_main/par.txt', par_road)
+    save_par('./road_new/par.txt', par_road)
     # par_mark()
 
 
@@ -523,7 +523,7 @@ def extend_grid(grid_set):
 
 
 def par_mark():
-    road_data = load_model2road('./road/par.txt')
+    road_data = load_model2road('./road_new/par.txt')
     # minx, maxx, miny, maxy = 1e10, 0, 1e10, 0
     for road in road_data:
         par_simplify(road)
@@ -533,7 +533,7 @@ def par_mark():
             grid_set.add(grid(pt.px, pt.py))
         road.set_grid_set(extend_grid(grid_set))
 
-    save_road2model('./road/par.txt', road_data)
+    save_road2model('./road_new/par.txt', road_data)
 
 
-par()
+par0()

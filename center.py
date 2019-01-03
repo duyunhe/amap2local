@@ -16,6 +16,7 @@ center_1 折返点
 """
 
 import math
+from copy import copy
 
 import numpy as np
 
@@ -176,6 +177,36 @@ def center_6():
     save_model('./road/center_.txt', new_road_data)
 
 
+def center_7():
+    """
+    连接两条center
+    :return: 
+    """
+    road_data = load_model2road('./road_new/center1.txt')
+    for road in road_data:
+        if road.rid == 4439:
+            br0 = road
+        elif road.rid == 4698:
+            er0 = road
+    pt = copy(er0.point_list[0])
+    br0.point_list.append(pt)
+
+    save_road2model('./road_new/center2.txt', road_data)
+
+
+def center_8():
+    """
+    delete roads
+    :return: 
+    """
+    road_data = load_model2road('./road_new/center1.txt')
+    save_data = []
+    for road in road_data:
+        if road.rid != 730 and road.rid != 706 and road.rid != 1197:
+            save_data.append(road)
+    save_road2model('./road_new/center1.txt', save_data)
+
+
 def center_5():
     """
     修正曲折道路
@@ -230,8 +261,8 @@ def center_2():
     最后再去除重复点
     :return: 
     """
-    road_data = load_model('./road/center.txt')
-    mod_road = {54}
+    road_data = load_model('./road_new/center1.txt')
+    # mod_road = {54}
     new_road_data = []
     for road in road_data:
         polyline = road['polyline']
@@ -297,7 +328,7 @@ def center_2():
         road['polyline'] = xylist2polyline(new_xy_list)
         new_road_data.append(road)
 
-    save_model('./road/center_.txt', new_road_data)
+    save_model('./road_new/center1.txt', new_road_data)
 
 
 def grid_center_line(road_name, road_list):
@@ -781,7 +812,7 @@ def center_merge(road0, road1):
 
 
 def center_mark():
-    road_data = load_model2road('./road_test/center.txt')
+    road_data = load_model2road('./road_new/center1.txt')
     # minx, maxx, miny, maxy = 1e10, 0, 1e10, 0
     for road in road_data:
         xylist = road.point_list
@@ -789,7 +820,7 @@ def center_mark():
         for pt in xylist:
             grid_set.add(grid(pt.px, pt.py))
         road.set_grid_set(grid_set)
-    save_road2model('./road_test/center1.txt', road_data)
+    save_road2model('./road_new/center1.txt', road_data)
 
 
 def process():
@@ -822,12 +853,12 @@ def fetch():
 
 
 def into_test():
-    road_data = load_model2road('./road_test/center1.txt')
+    road_data = load_model2road('./road_new/center1.txt')
     test_data = []
     for road in road_data:
-        if road.rid == 4635 or road.rid == 4638 or road.rid == 4636 or road.rid == 4632:
+        if road.name == u'蜀山路':
             test_data.append(road)
     save_road2model('./road_test/center1.txt', test_data)
 
 
-center_mark()
+center_8()

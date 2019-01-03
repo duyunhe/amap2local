@@ -68,7 +68,7 @@ def save_road2model(filename, road_list):
     for road in road_list:
         try:
             road_info = {'name': road.name, 'rid': road.rid,
-                         'polyline': point_list2polyline(road.point_list)}
+                         'polyline': point_list2polyline(road.point_list), 'level': road.level}
         except ValueError:
             print road.name, 'Value Error'
         try:
@@ -117,7 +117,7 @@ def load_model2road(filename):
     road_list = []
     for i, road_info in enumerate(data):
         name, point_list = road_info['name'], polyline2pt_list(road_info['polyline'])
-        rid = road_info['rid']
+        rid, level = road_info['rid'], road_info['level']
         try:
             cross_list = []
         except KeyError:
@@ -127,7 +127,8 @@ def load_model2road(filename):
         except KeyError:
             grid_set = None
         # Road
-        road = Road(name, 0, rid)
+        level = 1 if main_road(name) else 0
+        road = Road(name, level, rid)
         # mark = road_info['mark']
         # road.set_mark(mark)
         road.set_grid_set(grid_set)
@@ -1003,4 +1004,15 @@ def trans():
     save_model('./road/merge_xy.txt', road_list)
 
 
-save_db()
+def main_road(name):
+    m = [u'上塘', u'德胜', u'高速', u'中河', u'秋涛', u'石桥']
+    for key in m:
+        try:
+            if name.find(key) != -1:
+                return True
+        except AttributeError:
+            return False
+    return False
+
+
+# save_db()

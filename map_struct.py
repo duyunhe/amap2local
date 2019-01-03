@@ -78,10 +78,10 @@ class Segment:
 class Road:
     """
     道路
-    字段：道路名，方向，道路中线段list
+    字段：道路名，等级，道路中线段list
     """
-    def __init__(self, name, ort, rid):
-        self.name, self.ort = name, ort
+    def __init__(self, name, level, rid):
+        self.name, self.level = name, level
         self.seg_list = []              # list of Segment
         self.point_list = []            # list of Point
         self.rid = rid
