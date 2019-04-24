@@ -6,7 +6,6 @@
 
 import json
 import math
-
 from DBConn import oracle_util
 from geo import bl2xy, xy2bl, calc_dist, point2segment, get_cross_point, is_segment_cross, get_parallel, point2segment2, \
     calc_include_angle2, cut_x, cut_y
