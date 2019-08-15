@@ -176,13 +176,16 @@ def main_show1():
     fig1 = plt.figure(figsize=(12, 6))
     ax = fig1.add_subplot(111)
 
-    filename = './road_new/par1.txt'
+    filename = './road_main/par.txt'
     data = load_model(filename)
     for road in data:
         pl = road['polyline']
         name = road['name']
         rid = int(road['rid'])
-        level = int(road['level'])
+        try:
+            level = int(road['level'])
+        except KeyError:
+            level = 0
         # if name != u'上塘高架路' and name != u'中河北路':
         #     continue
         # if rid != 4599 and rid != 4601 and rid != 4164 and rid != 4597:
@@ -197,9 +200,9 @@ def main_show1():
             except ValueError:
                 print name
             # if rid == 4439 or rid == 4698:
-            #     plt.text(x, y, str(i))
+            # plt.text(x, y, str(i))
         c = 'k' if level == 0 else 'b'
-        plt.plot(x_list, y_list, marker='', markersize=2, linewidth=1, c=c)
+        plt.plot(x_list, y_list, marker='', markersize=3, linewidth=1, c=c)
 
         if False:
             # text = "{0},{1}".format(name, rid)

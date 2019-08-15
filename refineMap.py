@@ -117,7 +117,11 @@ def load_model2road(filename):
     road_list = []
     for i, road_info in enumerate(data):
         name, point_list = road_info['name'], polyline2pt_list(road_info['polyline'])
-        rid, level = road_info['rid'], road_info['level']
+        rid = road_info['rid']
+        try:
+            level = road_info['level']
+        except KeyError:
+            level = 1 if main_road(name) else 0
         try:
             cross_list = []
         except KeyError:
@@ -127,7 +131,6 @@ def load_model2road(filename):
         except KeyError:
             grid_set = None
         # Road
-        level = 1 if main_road(name) else 0
         road = Road(name, level, rid)
         # mark = road_info['mark']
         # road.set_mark(mark)
@@ -551,35 +554,24 @@ def update_road():
 
 
 def save_db():
-    # 原型
-    # road_data = load_model('./road/20_offset/par0.txt')
     conn = oracle_util.get_connection()
     cursor = conn.cursor()
-    # for road in road_data:
-    #     name, path, road_index = road['name'], polyline2path(road['polyline']), road['rid']
-    #     sql = "insert into tb_road_state (rid, road_name, direction, road_" \
-    #           "level, road_desc, def_speed) values (:1, :2, :3, :4, :5, :6)"
-    #     tup = (road_index, name, 0, 0, 0, 0)
-    #     cursor.execute(sql, tup)
-    #     sql = "insert into tb_road_point(rid, seq, longitude, " \
-    #           "latitude, road_level) values(:1, :2, :3, :4, :5)"
-    #     tup_list = []
-    #     for i, pt in enumerate(path):
-    #         px, py = map(float, pt.split(',')[0:2])
-    #         lat, lng = xy2bl(px, py)
-    #         tup = (road_index, i, lng, lat, 0)
-    #         tup_list.append(tup)
-    #     cursor.executemany(sql, tup_list)
-    #     road_index += 1
-    # conn.commit()
-    # 宽的道路
+
+    # 第二等级的道路
     road_data = load_model('./road_new/par1.txt')
+    sql = "delete from tb_road_state where map_level = 1"
+    cursor.execute(sql)
+    sql = "delete from tb_road_point_on_map where map_level = 1"
+    cursor.execute(sql)
+
     for road in road_data:
         name, path, road_index = road['name'], polyline2path(road['polyline']), road['rid']
+
         sql = "insert into tb_road_state (rid, road_name, direction, map_" \
-              "level, road_desc, def_speed) values (:1, :2, :3, :4, :5, :6)"
-        tup = (road_index, name, 0, 1, 0, 0)
+              "level, road_desc, def_speed) values (:1, :2, :3, 1, :4, :5)"
+        tup = (road_index, name, 0, 0, 0)
         cursor.execute(sql, tup)
+
         sql = "insert into tb_road_point_on_map(rid, seq, longitude, " \
               "latitude, map_level) values(:1, :2, :3, :4, 1)"
         tup_list = []

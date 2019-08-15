@@ -6,7 +6,9 @@
 
 
 import json
+import random
 import urllib2
+from time import clock
 
 from refineMap import load_model
 
@@ -14,6 +16,16 @@ data_idx = 0
 param_list = []
 my_key = "b41e8fba1baa7e243b8f09d8aa4d941c"
 jt_key = "0a54a59bdc431189d9405b3f2937921a"
+
+
+def debug_time(func):
+    def wrapper(*args, **kwargs):
+        bt = clock()
+        a = func(*args, **kwargs)
+        et = clock()
+        print "road loadapi.py", func.__name__, "cost", round(et - bt, 2), "secs"
+        return a
+    return wrapper
 
 
 def get_all_main_roads(lng0, lat0, lng1, lat1):
@@ -238,5 +250,60 @@ def get():
         print x
 
 
-main()
+def rgeo(batch_str):
+    url = "https://restapi.amap.com/v3/geocode/regeo?key={0}&location={1}" \
+          "&batch=true".format(jt_key, batch_str)
+    f = urllib2.urlopen(url)
+    response = f.read()
+    temp = json.loads(response)
+    codes = temp['regeocodes']
+    print response
+    f.close()
 
+
+def bat():
+    bl_list = []
+    for i in range(20):
+        lng, lat = random.uniform(120.0, 120.01), random.uniform(30, 30.01)
+        bl_list.append("{0},{1}".format(lng, lat))
+    rgeo("|".join(bl_list))
+
+
+@debug_time
+def batch_path_fetch2():
+    """
+    :return: 
+    """
+    try:
+        ops_list = []
+        for i in range(20):
+            # bl_list = []
+            # for j in range(10):
+            #     lng, lat = random.uniform(120.4, 120.8), random.uniform(30.0, 30.5)
+            #     bl_list.append("{0},{1}".format(lng, lat))
+            # batch_str = "|".join(bl_list)
+            lng, lat = random.uniform(120.0, 120.01), random.uniform(30.0, 30.01)
+            url = "/v3/geocode/regeo?key={0}&location={1},{2}" \
+                  "&batch=true".format(jt_key, lng, lat)
+            ops = {"url": url}
+            ops_list.append(ops)
+        data = {"ops": ops_list}
+        body = json.dumps(data)
+        req = urllib2.Request('https://restapi.amap.com/v3/batch?key={0}'.format(jt_key),
+                              body, {'Content-Type': 'application/json'})
+        f = urllib2.urlopen(req)
+        response = f.read()
+        print response
+        temp = json.loads(response)
+        f.close()
+    except urllib2.URLError, e:
+        print e
+
+
+@debug_time
+def main3():
+    for i in range(10):
+        bat()
+
+
+main3()

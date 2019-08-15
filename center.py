@@ -853,12 +853,12 @@ def fetch():
 
 
 def into_test():
-    road_data = load_model2road('./road_new/center1.txt')
+    road_data = load_model2road('./road_main/center1.txt')
     test_data = []
     for road in road_data:
-        if road.name == u'蜀山路':
+        if road.rid == 671:
             test_data.append(road)
     save_road2model('./road_test/center1.txt', test_data)
 
 
-center_8()
+into_test()
