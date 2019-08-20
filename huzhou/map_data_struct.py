@@ -2,7 +2,7 @@
 # @Time    : 2018/9/10 10:55
 # @Author  : 
 # @简介    : 道路数据结构
-# @File    : map_struct.py
+# @File    : map_data_struct.py
 
 
 class Segment:
@@ -31,7 +31,7 @@ MapLine 表示整条道路，道路由线段组成
 MapLine point_list按顺序加入MapPoint
 相交的道路通过同一个MapPoint pid关联
 即在pid点处相交
-MapPoint的link_list存放该点相关的道路路段信息list(line(道路MapLine), seq(第几个点), ort)
+MapPoint的link_list存放该点相关的道路路段信息list(line(道路MapLine), seq(道路中的第几个线段), ort)
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''"""
 
 

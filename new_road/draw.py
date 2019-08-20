@@ -39,7 +39,7 @@ def in_area(pt, area_pt):
 
 @debug_time
 def save_txt():
-    fp = open("../data/yhtl_3.txt", 'w')
+    fp = open("../data/yhtl_2.txt", 'w')
     conn = cx_Oracle.connect('hz/hz@192.168.11.88/orcl')
     cursor = conn.cursor()
     lp = [120.129157, 30.297211]
@@ -49,7 +49,7 @@ def save_txt():
     sql = "select vehicle_num, px, py, direction, speed_time from tb_gps_1805" \
           " where speed_time > :1 and speed_time < :2 and carstate = '0' order by speed_time"
     bt = datetime(2018, 5, 1, 12)
-    et = bt + timedelta(hours=3)
+    et = bt + timedelta(hours=6)
     tup = (bt, et)
     cursor.execute(sql, tup)
     traces = defaultdict(list)
